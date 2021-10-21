@@ -4,9 +4,6 @@ auth.logを解析し、ログイン試行を解析する。
 # install
 pip install yknsshanalysis
 
-# 使い方
-yknsshanalysis
-
 # オプション
 addr:
 auth.logファイルの場所を指定。初期値は/var/log/auth.log
