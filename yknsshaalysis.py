@@ -7,6 +7,7 @@ import circlify
 import matplotlib.pyplot as plt
 import pickle
 dic_ip_hisotry=None
+whois_list=["http://ipinfo.io/xxx","http://ipwhois.app/json/xxx","https://ipapi.co/xxx/json"]
 def _trim(string):
     if len(string) == 0:
         return ''
@@ -20,9 +21,10 @@ def main(args):
     local_addr="/var/log/auth.log"
     show_top=5
     ignore_trial_less_than=50
-    whois_url="http://ipwhois.app/json/xxx"
+    whois_url=["http://ipwhois.app/json/xxx"]
     ip_dict="ip_whois_history.pkl"
-    export_filename="sshanalysis_result.png"
+    export_name={"graph":"sshanalysis_result.png"}
+    expire_whois=30*24*3600 #有効期限のデフォルト値は30日
     if type(args) is str:
         args=[args]
     for arg in args:
@@ -34,11 +36,19 @@ def main(args):
         elif arg_.startswith('ignore_less='):
             ignore_trial_less_than=int(_trim(arg[12:]))
         elif arg_.startswith('whois_url='):
-            whois_url=int(_trim(arg[10:]))
+            url_tmp=_trim(arg[10:])
+            if url_tmp.lower()=="auto":
+                whois_url=whois_list
+            else:
+                whois_url=[url_tmp]
         elif arg_.startswith('ip_dict='):
             ip_dict=_trim(arg[8:])
             if ip_dict == "None":
                 ip_dict=None
+        elif arg_.startswith('export_graph_name='):
+            export_name["graph"]=_trim(arg[18:])
+        elif arg_.startswith('expire_whois='):
+            expire_whois=int(_trim(arg[13:]))
     print("reading auth.log file...")
     df=pd.read_table(local_addr, header=None)
     print("analyzing log")
@@ -52,13 +62,13 @@ def main(args):
         print("loading whois history")
         dic_ip_history=loadLibrary(ip_dict)
     print("calling whois")
-    df_ctfreq_,dic_ip_history=do_whois(whois_url,df_ipfreq_,dic_ip_history)
+    df_ctfreq_,dic_ip_history=do_whois(whois_url,df_ipfreq_,dic_ip_history,expire_whois)
     if dic_ip_history is not None:
         print("exporting whois history")
         saveLibrary(ip_dict,dic_ip_history)
     print("grouping countries")
     dfs_list=country_grouping(df_ctfreq_)
-    show_graph(show_top,dfs_list,export_filename)
+    show_graph(show_top,dfs_list,export_name)
 
 
 def analyzeAuth_fast(df):
@@ -147,20 +157,29 @@ def whoisCountry(whois_url,ip_address,defaultValue):
         return data["country"]
     else:
         return defaultValue
-def do_whois(whois_url,df,dic_ip_history):
+def do_whois(whois_url,df,dic_ip_history,expire_whois):
     dic_country={}
     is_ip_history_enabled=dic_ip_history is not None
-    #st=time.time()
+    nowtime=time.time()
     if is_ip_history_enabled:
         for ip_address, v in df.iterrows():
+            country=None
             if ip_address in dic_ip_history:
-                country=dic_ip_history[ip_address]["name"]
-            else:
-                country=whoisCountry(whois_url,ip_address,"N/A")
+                data=dic_ip_history[ip_address]
+                if nowtime-data["register"]<=expire_whois:
+                    country=data["name"]
+                else:
+                    print("expired:",nowtime-data["register"],"[sec]"," removing IP:",ip_address," country:",data["name"])
+                    del dic_ip_history[ip_address]
+            if country is None:
+                for url in whois_url:
+                    country=whoisCountry(url,ip_address,"N/A")
+                    if country!="N/A":
+                        break;
                 dic_ip_history[ip_address]={"name":country,"register":time.time()}
             dic_country[ip_address]=country
     else:
-        for ip_address, v in df_ip3.iterrows():
+        for ip_address, v in df.iterrows():
             dic_country[ip_address]=whoisCountry(whois_url,"N/A")
     df_country=pd.DataFrame({"country":dic_country})
     df_country['count']=df['count']
@@ -177,7 +196,7 @@ def country_grouping(df):
     return dfs_list
 
 
-def show_graph(show_top,dfs_list,export_filename):
+def show_graph(show_top,dfs_list,export_name):
     count=0
     top_country=[]
     top_attack=[]
@@ -219,7 +238,7 @@ def show_graph(show_top,dfs_list,export_filename):
               va='center',
               ha='center'
          )
-    plt.savefig(export_filename)
+    plt.savefig(export_name["graph"])
     plt.show()
 
 
