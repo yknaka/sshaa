@@ -18,7 +18,7 @@ def _trim(string):
     return string
 
 
-def main(args):
+def main(args=sys.argv):
   local_addr = "/var/log/auth.log"
   show_top = 5
   ignore_trial_less_than = 50
@@ -243,4 +243,4 @@ def show_graph(show_top, dfs_list, export_name):
   plt.show()
 
 
-main(sys.argv)
+main()
