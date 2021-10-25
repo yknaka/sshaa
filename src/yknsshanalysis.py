@@ -1,3 +1,4 @@
+# coding: UTF-8
 import sys
 import pandas as pd
 import requests
@@ -5,7 +6,8 @@ import time
 import circlify
 import matplotlib.pyplot as plt
 import pickle
-dic_ip_hisotry = None
+import getOptions
+
 whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
 
 
@@ -19,61 +21,68 @@ def _trim(string):
 
 
 def main(args=sys.argv):
-  local_addr = "/var/log/auth.log"
-  show_top = 5
-  ignore_trial_less_than = 50
-  whois_url = ["http://ipwhois.app/json/xxx"]
-  ip_dict = "ip_whois_history.pkl"
+  # オプションの初期値を設定
+  optionDict = {}
+  optionDict["log"] = "/var/log/auth.log"
+  optionDict["show_top"] = 5
+  optionDict["ignore_less"] = 50
+  optionDict["whois_url"] = "http://ipwhois.app/json/xxx"
+  optionDict["ip_dict"] = "ip_whois_history.pkl"
+  optionDict["expire_whois"] = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
   export_name = {"graph": "sshanalysis_result.png"}
-  expire_whois = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
+  # オプションの代入処理
   if type(args) is str:
     args = [args]
-  for arg in args:
-    arg_ = arg.lower()
-    if arg_.startswith('addr='):
-      local_addr = _trim(arg[5:])
-    elif arg_.startswith('show_top='):
-      show_top = int(_trim(arg[9:]))
-    elif arg_.startswith('ignore_less='):
-      ignore_trial_less_than = int(_trim(arg[12:]))
-    elif arg_.startswith('whois_url='):
-      url_tmp = _trim(arg[10:])
-      if url_tmp.lower() == "auto":
-        whois_url = whois_list
-      else:
-        whois_url = [url_tmp]
-    elif arg_.startswith('ip_dict='):
-      ip_dict = _trim(arg[8:])
-      if ip_dict == "None":
-        ip_dict = None
-    elif arg_.startswith('export_graph_name='):
-      export_name["graph"] = _trim(arg[18:])
-    elif arg_.startswith('expire_whois='):
-      expire_whois = int(_trim(arg[13:]))
+  optionDict = getOptions.getDict(args, optionDict)
+  getOptions.toInt(optionDict, "show_top")
+  getOptions.toInt(optionDict, "ignore_less")
+  getOptions.toInt(optionDict, "expire_whois")
+  if optionDict["whois_url"].lower() == "auto":
+    optionDict["whois_url"] = whois_list
+  else:
+    optionDict["whois_url"] = [optionDict["whois_url"]]
+  if "export_graph_name" in optionDict:
+    export_name["graph"] = optionDict["export_graph_name"]
+  # 旧版との互換性
+  if "addr" in optionDict:
+    optionDict["log"] = optionDict["addr"]
+  # メイン処理
   print("reading auth.log file...")
-  df = pd.read_table(local_addr, header=None)
+  try:
+    df = pd.read_table(optionDict["log"], header=None)
+  except Exception as e:
+    print("Some thing error has occurred during reading logfile.")
+    print("Please check your file.")
+    print(e)
+    sys.exit(0)
   print("analyzing log")
-  df2 = df[df[0].str.contains("Failed|Invalid user")]
-  df_ipfreq = analyzeAuth_fast(df2)
-  df_ipfreq_ = df_ipfreq[df_ipfreq["count"] > ignore_trial_less_than]
-  if ip_dict is None:
+  df_log = df[df[0].str.contains("Failed|Invalid user")]
+  # Extract unauthorized access->count same IPs
+  df_ipfreq = create_ip_count_df_fast(df_log)
+  # Ignore unauthorized access from the same IP if it is below a certain level
+  df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
+  # Load whois history
+  if optionDict["ip_dict"] == "None":
+    print("...whois cache has been ignored.")
     dic_ip_history = None
   else:
-    print("loading whois history")
-    dic_ip_history = loadLibrary(ip_dict)
-  print("calling whois")
-  df_ctfreq_, dic_ip_history = do_whois(whois_url, df_ipfreq_, dic_ip_history, expire_whois)
+    print("...loading whois history")
+    dic_ip_history = loadLibrary(optionDict["ip_dict"])
+  print("operating whois")
+  df_ct_ip_freq, dic_ip_history = do_whois(df_iphifreq, dic_ip_history, optionDict)
   if dic_ip_history is not None:
-    print("exporting whois history")
-    saveLibrary(ip_dict, dic_ip_history)
+    print("...exporting whois history")
+    saveLibrary(optionDict["ip_dict"], dic_ip_history)
+  print(df_ct_ip_freq)
   print("grouping countries")
-  dfs_list = country_grouping(df_ctfreq_)
-  show_graph(show_top, dfs_list, export_name)
+  dfs_list = country_grouping(df_ct_ip_freq)
+  show_graph(dfs_list, optionDict["show_top"], export_name)
 
 
-def analyzeAuth_fast(df):
+# for Ubuntu auth.log
+def create_ip_count_df_fast(df_log):
   ip_list = []
-  for index, row in df.iterrows():
+  for index, row in df_log.iterrows():
     s = row[0]
     stw = 'from '
     edw = ' port '
@@ -84,9 +93,10 @@ def analyzeAuth_fast(df):
   return pd.DataFrame({'count': pd.DataFrame(ip_list, columns=['ip']).ip.value_counts()})
 
 
-def analyzeAuth(df):
+# for Ubuntu auth.log
+def create_ip_count_df(df_log):
   ip_arr = []
-  for index, row in df.iterrows():
+  for index, row in df_log.iterrows():
     s = row[0]
     # Failed password for xxx,Failed password for invalid user xxx,Invalid user xxx
     stw = 'Invalid user '
@@ -139,8 +149,11 @@ def loadLibrary(libaddr):
     with open(libaddr, "rb") as tf:
       new_dict = pickle.load(tf)
     return new_dict
+  except FileNotFoundError:
+    print("*****No such file... Preparing a new dictionary.")
+    return {}
   except Exception as e:
-    print(e)
+    print("*****", e, " Preparing a new dictionary")
     return {}
 
 
@@ -157,58 +170,59 @@ def whoisCountry(whois_url, ip_address, defaultValue):
     return defaultValue
 
 
-def do_whois(whois_url, df, dic_ip_history, expire_whois):
+def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
   dic_country = {}
   is_ip_history_enabled = dic_ip_history is not None
   nowtime = time.time()
   if is_ip_history_enabled:
-    for ip_address, v in df.iterrows():
+    for ip_address, v in df_ip_and_frequency.iterrows():
       country = None
       if ip_address in dic_ip_history:
         data = dic_ip_history[ip_address]
-        if nowtime - data["register"] <= expire_whois:
+        if nowtime - data["register"] <= optionDict["expire_whois"]:
           country = data["name"]
         else:
           print("expired:", nowtime - data["register"], "[sec]", " removing IP:", ip_address, " country:", data["name"])
           del dic_ip_history[ip_address]
       if country is None:
-        for url in whois_url:
+        for url in optionDict["whois_url"]:
           country = whoisCountry(url, ip_address, "N/A")
           if country != "N/A":
             break
         dic_ip_history[ip_address] = {"name": country, "register": time.time()}
       dic_country[ip_address] = country
   else:
-    for ip_address, v in df.iterrows():
-      dic_country[ip_address] = whoisCountry(whois_url, "N/A")
-  df_country = pd.DataFrame({"country": dic_country})
-  df_country['count'] = df['count']
-  return df_country, dic_ip_history
+    for ip_address, v in df_ip_and_frequency.iterrows():
+      dic_country[ip_address] = whoisCountry(optionDict["whois_url"], "N/A")
+  df_ip_country_frequency = pd.DataFrame({"country": dic_country})
+  df_ip_country_frequency['count'] = df_ip_and_frequency['count']
+  return df_ip_country_frequency, dic_ip_history
 
 
-def country_grouping(df):
-  dfs = df.groupby("country").sum()
-  dfs_list = []
-  for i, v in dfs.iterrows():
-    d = {'country': i, 'attack': v.iloc[0]}
-    dfs_list.append(d)
-  dfs_list = sorted(dfs_list, key=lambda x: -x['attack'])
-  return dfs_list
+def country_grouping(df_ip_country_frequency):
+  df_country_frequency = df_ip_country_frequency.groupby("country").sum()
+  country_frequency_list = []
+  # key = country, value= total attack count
+  for i, v in df_country_frequency.iterrows():
+    d = {'key': i, 'value': v.iloc[0]}
+    country_frequency_list.append(d)
+  country_frequency_list = sorted(country_frequency_list, key=lambda x: -x['value'])
+  return country_frequency_list
 
 
-def show_graph(show_top, dfs_list, export_name):
+def show_graph(country_frequency_list, show_top, export_name):
   count = 0
   top_country = []
   top_attack = []
-  for d in dfs_list:
-    top_country.append(d.get('country'))
-    top_attack.append(d.get('attack'))
+  for d in country_frequency_list:
+    top_country.append(d.get('key'))
+    top_attack.append(d.get('value'))
     count += 1
     if count >= show_top:
       break
   # circleのサイズの設定方法がわからないので力技
   top_country.reverse()
-  df = pd.DataFrame(dfs_list)
+  df = pd.DataFrame(country_frequency_list)
   circles = circlify.circlify(
       top_attack,
       show_enclosure=False,
@@ -233,7 +247,7 @@ def show_graph(show_top, dfs_list, export_name):
     x, y, r = circle
     ax.add_patch(plt.Circle((x, y), r, alpha=0.2, linewidth=2))
     plt.annotate(
-        label + "\n" + str(df[df["country"] == label].attack.iloc[0]),
+        label + "\n" + str(df[df["key"] == label].value.iloc[0]),
         (x, y),
         va='center',
         ha='center'
@@ -242,4 +256,5 @@ def show_graph(show_top, dfs_list, export_name):
   plt.show()
 
 
-# main()
+if __name__ == '__main__':
+  main()

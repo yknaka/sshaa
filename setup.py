@@ -1,6 +1,6 @@
 import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+  long_description = fh.read()
 
 setuptools.setup(
     name="yknsshanalysis",
@@ -23,7 +23,7 @@ setuptools.setup(
     py_modules=['yknsshanalysis'],
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'yknsshanalysis = yknsshanalysis:main'
         ]
