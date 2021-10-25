@@ -46,6 +46,8 @@ def main(args=sys.argv):
   # 旧版との互換性
   if "addr" in optionDict:
     optionDict["log"] = optionDict["addr"]
+  group_by_ip = "group_by_ip" in optionDict
+
   # メイン処理
   print("reading auth.log file...")
   try:
@@ -60,7 +62,10 @@ def main(args=sys.argv):
   # Extract unauthorized access->count same IPs
   df_ipfreq = create_ip_count_df_fast(df_log)
   # Ignore unauthorized access from the same IP if it is below a certain level
-  df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
+  if group_by_ip:
+    df_iphifreq = df_ipfreq.sort_values(by="count", ascending=False).head(optionDict["show_top"])
+  else:
+    df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
   # Load whois history
   if optionDict["ip_dict"] == "None":
     print("...whois cache has been ignored.")
@@ -73,9 +78,12 @@ def main(args=sys.argv):
   if dic_ip_history is not None:
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
-  print(df_ct_ip_freq)
+  print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("grouping countries")
-  dfs_list = country_grouping(df_ct_ip_freq)
+  if group_by_ip:
+    dfs_list = list_by_ip(df_ct_ip_freq)
+  else:
+    dfs_list = list_by_country(df_ct_ip_freq)
   show_graph(dfs_list, optionDict["show_top"], export_name)
 
 
@@ -199,12 +207,22 @@ def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
   return df_ip_country_frequency, dic_ip_history
 
 
-def country_grouping(df_ip_country_frequency):
+def list_by_country(df_ip_country_frequency):
   df_country_frequency = df_ip_country_frequency.groupby("country").sum()
   country_frequency_list = []
   # key = country, value= total attack count
   for i, v in df_country_frequency.iterrows():
     d = {'key': i, 'value': v.iloc[0]}
+    country_frequency_list.append(d)
+  country_frequency_list = sorted(country_frequency_list, key=lambda x: -x['value'])
+  return country_frequency_list
+
+
+def list_by_ip(df_ip_country_frequency):
+  country_frequency_list = []
+  # key = IP(country), value= total attack count
+  for ip, v in df_ip_country_frequency.iterrows():
+    d = {'key': ip + "\n(" + v.iloc[0] + ")", 'value': v.iloc[1]}
     country_frequency_list.append(d)
   country_frequency_list = sorted(country_frequency_list, key=lambda x: -x['value'])
   return country_frequency_list
