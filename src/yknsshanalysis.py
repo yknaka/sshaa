@@ -55,7 +55,6 @@ def main(args=sys.argv):
   print("analyzing log")
   df2 = df[df[0].str.contains("Failed|Invalid user")]
   df_ipfreq = analyzeAuth_fast(df2)
-  # 絞り込み
   df_ipfreq_ = df_ipfreq[df_ipfreq["count"] > ignore_trial_less_than]
   if ip_dict is None:
     dic_ip_history = None
