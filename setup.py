@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="yknsshanalysis",
-    version="1.1.2",
+    version="1.2.0",
     author="Yuki NAKAMURA",
     author_email="naka_yk@live.jp",
     description="Analyze auth.log",

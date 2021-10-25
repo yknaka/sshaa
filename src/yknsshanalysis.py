@@ -29,7 +29,9 @@ def main(args=sys.argv):
   optionDict["whois_url"] = "http://ipwhois.app/json/xxx"
   optionDict["ip_dict"] = "ip_whois_history.pkl"
   optionDict["expire_whois"] = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
-  export_name = {"graph": "sshanalysis_result.png"}
+  export_name = {"graph": "sshanalysis_result.png",
+                 "graph_csv": "sshanalysis_result.csv",
+                 "count_csv": "sshanalysis_ip_countlist.csv"}
   # オプションの代入処理
   if type(args) is str:
     args = [args]
@@ -43,6 +45,8 @@ def main(args=sys.argv):
     optionDict["whois_url"] = [optionDict["whois_url"]]
   if "export_graph_name" in optionDict:
     export_name["graph"] = optionDict["export_graph_name"]
+  if "export_csv_name" in optionDict:
+    export_name["graph_csv"] = optionDict["export_csv_name"]
   # 旧版との互換性
   if "addr" in optionDict:
     optionDict["log"] = optionDict["addr"]
@@ -84,7 +88,8 @@ def main(args=sys.argv):
     dfs_list = list_by_ip(df_ct_ip_freq)
   else:
     dfs_list = list_by_country(df_ct_ip_freq)
-  show_graph(dfs_list, optionDict["show_top"], export_name)
+  export_csv(df_iphifreq, df_ct_ip_freq, optionDict, export_name)
+  show_graph(dfs_list, optionDict, export_name)
 
 
 # for Ubuntu auth.log
@@ -228,7 +233,7 @@ def list_by_ip(df_ip_country_frequency):
   return country_frequency_list
 
 
-def show_graph(country_frequency_list, show_top, export_name):
+def show_graph(country_frequency_list, optionDict, export_name):
   count = 0
   top_country = []
   top_attack = []
@@ -236,7 +241,7 @@ def show_graph(country_frequency_list, show_top, export_name):
     top_country.append(d.get('key'))
     top_attack.append(d.get('value'))
     count += 1
-    if count >= show_top:
+    if count >= optionDict["show_top"]:
       break
   # circleのサイズの設定方法がわからないので力技
   top_country.reverse()
@@ -272,6 +277,12 @@ def show_graph(country_frequency_list, show_top, export_name):
     )
   plt.savefig(export_name["graph"])
   plt.show()
+
+
+def export_csv(df_iphifreq, df_ip_country_frequency, optionDict, export_name):
+  if "export_all_ip" in optionDict:
+    df_iphifreq.to_csv(export_name["count_csv"])
+  df_ip_country_frequency.sort_values(by="count", ascending=False).to_csv(export_name["graph_csv"])
 
 
 if __name__ == '__main__':
