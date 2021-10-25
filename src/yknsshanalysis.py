@@ -47,6 +47,8 @@ def main(args=sys.argv):
     export_name["graph"] = optionDict["export_graph_name"]
   if "export_csv_name" in optionDict:
     export_name["graph_csv"] = optionDict["export_csv_name"]
+  if "export_iplist_name" in optionDict:
+    export_name["count_csv"] = optionDict["export_iplist_name"]
   # 旧版との互換性
   if "addr" in optionDict:
     optionDict["log"] = optionDict["addr"]
@@ -88,7 +90,7 @@ def main(args=sys.argv):
     dfs_list = list_by_ip(df_ct_ip_freq)
   else:
     dfs_list = list_by_country(df_ct_ip_freq)
-  export_csv(df_iphifreq, df_ct_ip_freq, optionDict, export_name)
+  export_csv(df_ipfreq, df_ct_ip_freq, optionDict, export_name)
   show_graph(dfs_list, optionDict, export_name)
 
 
@@ -279,9 +281,9 @@ def show_graph(country_frequency_list, optionDict, export_name):
   plt.show()
 
 
-def export_csv(df_iphifreq, df_ip_country_frequency, optionDict, export_name):
+def export_csv(df_ipfreq, df_ip_country_frequency, optionDict, export_name):
   if "export_all_ip" in optionDict:
-    df_iphifreq.to_csv(export_name["count_csv"])
+    df_ipfreq.sort_values(by="count", ascending=False).to_csv(export_name["count_csv"])
   df_ip_country_frequency.sort_values(by="count", ascending=False).to_csv(export_name["graph_csv"])
 
 

@@ -1,8 +1,15 @@
 # yknsshanalysis
 
-auth.logを解析し、ログイン試行を解析する。
+Linuxサーバの一つであるUbuntu OSにおいてsshアクセスが記録されるauth.logを読み込み、不正ログインを分析する。
+sshによるログイン試行のうち、ログイン失敗が記録されたものについて、IPアドレスの所属国と出現回数を分析し、視覚化する。
+出力はCSVリストおよび円グラフ。
+
 # install
-pip install yknsshanalysis
+pip install -U yknsshanalysis
+
+# uninstall
+pip uninstall -y yknsshanalysis
+
 
 # オプション
 addr:
@@ -25,8 +32,21 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 
 キャッシュを利用しない場合は"ip_dict=None"と入力する
 
+group_by_ip:
+分析内容を変更するフラグ。このフラグが存在する場合、国別の集計を行わなわず、アクセス元IPアドレスと所属国および攻撃数を表示する。
+
 export_graph_name:
-出力するグラフのファイル名を変更する。デフォルトは"sshanalysis_result.png"
+分析内容（デフォルトではsshでのログイン試行のうち、ログインに失敗したパターンにおけるアクセス元IPアドレスの所属国分析）を示すグラフのファイル名を変更する。デフォルトは"sshanalysis_result.png"
+
+export_csv_name:
+グラフの示す数値がリスト形式で出力される。本設定で出力されるCSVファイル名を指定できる。デフォルトは"sshanalysis_result.csv"
+
+export_all_ip:
+ログファイル内に存在するすべてのIPアドレスと出現回数のリストを出力するフラグ。出力先は"export_iplist_name"で指定する。
+
+export_iplist_name:
+"export_all_ip"オプションを指定した場合、ログファイル内のすべてのIPアドレスと出現回数のリストをCSV形式で保存する。本設定で出力されるCSVファイル名を指定できる。
+デフォルトは"sshanalysis_ip_countlist.csv"
 
 # Example
-yknsshanalysis addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png"
+yknsshanalysis addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
