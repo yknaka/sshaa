@@ -1,1 +1,1 @@
-import get_option
+from . import get_option
