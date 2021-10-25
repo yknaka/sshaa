@@ -1,4 +1,6 @@
 .DS_Store
 src/.DS_Store
+sshanalysis_ip_countlist.csv
 sshanalysis_result.png
+sshanalysis_result.csv
 ip_whois_history.pkl
