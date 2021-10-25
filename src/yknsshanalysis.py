@@ -6,7 +6,7 @@ import time
 import circlify
 import matplotlib.pyplot as plt
 import pickle
-import getOptions
+from option import get_option as get_option
 
 whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
 
@@ -35,10 +35,10 @@ def main(args=sys.argv):
   # オプションの代入処理
   if type(args) is str:
     args = [args]
-  optionDict = getOptions.getDict(args, optionDict)
-  getOptions.toInt(optionDict, "show_top")
-  getOptions.toInt(optionDict, "ignore_less")
-  getOptions.toInt(optionDict, "expire_whois")
+  optionDict = get_option.getDict(args, optionDict)
+  get_option.toInt(optionDict, "show_top")
+  get_option.toInt(optionDict, "ignore_less")
+  get_option.toInt(optionDict, "expire_whois")
   if optionDict["whois_url"].lower() == "auto":
     optionDict["whois_url"] = whois_list
   else:
