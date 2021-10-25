@@ -35,10 +35,10 @@ def main(args=sys.argv):
   # オプションの代入処理
   if type(args) is str:
     args = [args]
-  optionDict = get_option.getDict(args, optionDict)
-  get_option.toInt(optionDict, "show_top")
-  get_option.toInt(optionDict, "ignore_less")
-  get_option.toInt(optionDict, "expire_whois")
+  optionDict = get_option.get_dict(args, optionDict)
+  get_option.to_int(optionDict, "show_top")
+  get_option.to_int(optionDict, "ignore_less")
+  get_option.to_int(optionDict, "expire_whois")
   if optionDict["whois_url"].lower() == "auto":
     optionDict["whois_url"] = whois_list
   else:
