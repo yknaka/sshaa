@@ -7,6 +7,13 @@ import matplotlib.pyplot as plt
 import pickle
 dic_ip_hisotry = None
 whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
+local_addr = "/var/log/auth.log"
+show_top = 5
+ignore_trial_less_than = 50
+whois_url = ["http://ipwhois.app/json/xxx"]
+ip_dict = "ip_whois_history.pkl"
+export_name = {"graph": "sshanalysis_result.png"}
+expire_whois = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
 
 
 def _trim(string):
@@ -19,13 +26,6 @@ def _trim(string):
 
 
 def main(args=sys.argv):
-  local_addr = "/var/log/auth.log"
-  show_top = 5
-  ignore_trial_less_than = 50
-  whois_url = ["http://ipwhois.app/json/xxx"]
-  ip_dict = "ip_whois_history.pkl"
-  export_name = {"graph": "sshanalysis_result.png"}
-  expire_whois = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
   if type(args) is str:
     args = [args]
   for arg in args:
