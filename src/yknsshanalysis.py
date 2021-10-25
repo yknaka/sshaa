@@ -6,7 +6,7 @@ import time
 import circlify
 import matplotlib.pyplot as plt
 import pickle
-import getOptions
+from option import get_option as get_option
 
 whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
 
@@ -29,23 +29,31 @@ def main(args=sys.argv):
   optionDict["whois_url"] = "http://ipwhois.app/json/xxx"
   optionDict["ip_dict"] = "ip_whois_history.pkl"
   optionDict["expire_whois"] = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
-  export_name = {"graph": "sshanalysis_result.png"}
+  export_name = {"graph": "sshanalysis_result.png",
+                 "graph_csv": "sshanalysis_result.csv",
+                 "count_csv": "sshanalysis_ip_countlist.csv"}
   # オプションの代入処理
   if type(args) is str:
     args = [args]
-  optionDict = getOptions.getDict(args, optionDict)
-  getOptions.toInt(optionDict, "show_top")
-  getOptions.toInt(optionDict, "ignore_less")
-  getOptions.toInt(optionDict, "expire_whois")
+  optionDict = get_option.get_dict(args, optionDict)
+  get_option.to_int(optionDict, "show_top")
+  get_option.to_int(optionDict, "ignore_less")
+  get_option.to_int(optionDict, "expire_whois")
   if optionDict["whois_url"].lower() == "auto":
     optionDict["whois_url"] = whois_list
   else:
     optionDict["whois_url"] = [optionDict["whois_url"]]
   if "export_graph_name" in optionDict:
     export_name["graph"] = optionDict["export_graph_name"]
+  if "export_csv_name" in optionDict:
+    export_name["graph_csv"] = optionDict["export_csv_name"]
+  if "export_iplist_name" in optionDict:
+    export_name["count_csv"] = optionDict["export_iplist_name"]
   # 旧版との互換性
   if "addr" in optionDict:
     optionDict["log"] = optionDict["addr"]
+  group_by_ip = "group_by_ip" in optionDict
+
   # メイン処理
   print("reading auth.log file...")
   try:
@@ -60,7 +68,10 @@ def main(args=sys.argv):
   # Extract unauthorized access->count same IPs
   df_ipfreq = create_ip_count_df_fast(df_log)
   # Ignore unauthorized access from the same IP if it is below a certain level
-  df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
+  if group_by_ip:
+    df_iphifreq = df_ipfreq.sort_values(by="count", ascending=False).head(optionDict["show_top"])
+  else:
+    df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
   # Load whois history
   if optionDict["ip_dict"] == "None":
     print("...whois cache has been ignored.")
@@ -73,10 +84,14 @@ def main(args=sys.argv):
   if dic_ip_history is not None:
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
-  print(df_ct_ip_freq)
+  print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("grouping countries")
-  dfs_list = country_grouping(df_ct_ip_freq)
-  show_graph(dfs_list, optionDict["show_top"], export_name)
+  if group_by_ip:
+    dfs_list = list_by_ip(df_ct_ip_freq)
+  else:
+    dfs_list = list_by_country(df_ct_ip_freq)
+  export_csv(df_ipfreq, df_ct_ip_freq, optionDict, export_name)
+  show_graph(dfs_list, optionDict, export_name)
 
 
 # for Ubuntu auth.log
@@ -199,7 +214,7 @@ def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
   return df_ip_country_frequency, dic_ip_history
 
 
-def country_grouping(df_ip_country_frequency):
+def list_by_country(df_ip_country_frequency):
   df_country_frequency = df_ip_country_frequency.groupby("country").sum()
   country_frequency_list = []
   # key = country, value= total attack count
@@ -210,7 +225,17 @@ def country_grouping(df_ip_country_frequency):
   return country_frequency_list
 
 
-def show_graph(country_frequency_list, show_top, export_name):
+def list_by_ip(df_ip_country_frequency):
+  country_frequency_list = []
+  # key = IP(country), value= total attack count
+  for ip, v in df_ip_country_frequency.iterrows():
+    d = {'key': ip + "\n(" + v.iloc[0] + ")", 'value': v.iloc[1]}
+    country_frequency_list.append(d)
+  country_frequency_list = sorted(country_frequency_list, key=lambda x: -x['value'])
+  return country_frequency_list
+
+
+def show_graph(country_frequency_list, optionDict, export_name):
   count = 0
   top_country = []
   top_attack = []
@@ -218,7 +243,7 @@ def show_graph(country_frequency_list, show_top, export_name):
     top_country.append(d.get('key'))
     top_attack.append(d.get('value'))
     count += 1
-    if count >= show_top:
+    if count >= optionDict["show_top"]:
       break
   # circleのサイズの設定方法がわからないので力技
   top_country.reverse()
@@ -254,6 +279,12 @@ def show_graph(country_frequency_list, show_top, export_name):
     )
   plt.savefig(export_name["graph"])
   plt.show()
+
+
+def export_csv(df_ipfreq, df_ip_country_frequency, optionDict, export_name):
+  if "export_all_ip" in optionDict:
+    df_ipfreq.sort_values(by="count", ascending=False).to_csv(export_name["count_csv"])
+  df_ip_country_frequency.sort_values(by="count", ascending=False).to_csv(export_name["graph_csv"])
 
 
 if __name__ == '__main__':
