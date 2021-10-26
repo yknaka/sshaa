@@ -6,18 +6,9 @@ import time
 import circlify
 import matplotlib.pyplot as plt
 import pickle
-from option import get_option as get_option
+import consoleoptions as get_option
 
 whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
-
-
-def _trim(string):
-  if len(string) == 0:
-    return ''
-  elif string[0] == '\'' or string[0] == '\"':
-    return string[1:-1]
-  else:
-    return string
 
 
 def main(args=sys.argv):

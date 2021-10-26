@@ -2,9 +2,14 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
   long_description = fh.read()
 
+
+def _requires_from_file(filename):
+  return open(filename).read().splitlines()
+
+
 setuptools.setup(
     name="yknsshanalysis",
-    version="1.2.0",
+    version="1.3.0",
     author="Yuki NAKAMURA",
     author_email="naka_yk@live.jp",
     description="Analyze auth.log",
@@ -23,6 +28,7 @@ setuptools.setup(
     py_modules=['yknsshanalysis'],
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
+    install_requires=_requires_from_file('requirements.txt'),
     entry_points={
         'console_scripts': [
             'yknsshanalysis = yknsshanalysis:main'
