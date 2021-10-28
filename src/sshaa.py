@@ -9,7 +9,7 @@ from matplotlib import rcParams
 import pickle
 import consoleoptions as get_option
 
-whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ipapi.co/xxx/json"]
+whois_list = ["http://ipwhois.app/json/{ip}", "https://ipapi.co/{ip}/json", "http://ipinfo.io/{ip}"]
 
 
 def main(args=sys.argv):
@@ -19,7 +19,7 @@ def main(args=sys.argv):
   optionDict["log"] = "/var/log/auth.log"
   optionDict["show_top"] = 5
   optionDict["ignore_less"] = 50
-  optionDict["whois_url"] = "http://ipwhois.app/json/xxx"
+  optionDict["whois_url"] = "http://ipwhois.app/json/{ip}"
   optionDict["ip_dict"] = "ip_whois_history.pkl"
   optionDict["expire_whois"] = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
   export_name = {"graph": "sshanalysis_result.png",
@@ -78,7 +78,7 @@ def main(args=sys.argv):
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
   df_ct_ip_freq = convert_country_name(df_ct_ip_freq, df_ccode, optionDict)
-  print("***result+++")
+  print("***result***")
   print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("************")
   print("grouping countries")
@@ -172,7 +172,7 @@ headers = {"content-type": "application/json"}
 
 
 def whoisCountry(whois_url, ip_address, defaultValue):
-  url = whois_url.replace('xxx', ip_address)
+  url = whois_url.replace('{ip}', ip_address)
   response = requests.get(url, headers=headers)
   data = response.json()
   if "country_code" in data:
@@ -274,7 +274,7 @@ def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
   )
 
   fig, ax = plt.subplots(figsize=(10, 10))
-  ax.set_title('ssh analysis')
+  ax.set_title('ssh analysis - Number of Failed Login Attempts - ')
   ax.axis('off')
 
   lim = max(
@@ -291,11 +291,12 @@ def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
     rcParams['font.family'] = 'sans-serif'
     rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meiryo', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
   labels = top_country
+  bool_mask_label = "mask_ip" in optionDict
   for circle, label in zip(circles, labels):
     x, y, r = circle
     ax.add_patch(plt.Circle((x, y), r, alpha=0.2, linewidth=2))
     plt.annotate(
-        label + "\n" + str(df[df["key"] == label].value.iloc[0]),
+        ("***.***.***.***" if bool_mask_label else label) + "\n" + str(df[df["key"] == label].value.iloc[0]),
         (x, y),
         va='center',
         ha='center'

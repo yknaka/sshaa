@@ -56,10 +56,10 @@ Whoisの取得先を直接指定する場合、正しく取得できる条件は
 
 https://*****.com/1.2.3.4/json など
 
-この場合、IPアドレスの入力箇所を'xxx'として
+この場合、IPアドレスの入力箇所を'{ip}'として
 
 ```
-whois_url="https://*****.com/xxx/json"
+whois_url="https://*****.com/{ip}/json"
 ```
 
 と入力する。
@@ -101,6 +101,8 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 ## dont_show_gui_graph
 グラフを画面表示しないフラグ。グラフのファイル出力はフラグによらず行われる。
 
+## mask_ip
+IPアドレスを\*\*\*.\*\*\*.\*\*\*で表示する。
 
 # Example
 ``` console
@@ -112,5 +114,6 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 ```
 
 # Appendix
-##Countries.csv
+## Countries.csv
+
 Quoted by [National Diet Library](https://iss.ndl.go.jp/help/help_ja/help_country_codes.html)(Oct. 28, 2021)
