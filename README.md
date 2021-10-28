@@ -6,7 +6,7 @@ sshによるログイン試行のうち、ログイン失敗が記録された�
 # Outputs
 ## Graph
 Top 5 Countries of IPs Where SSH Login Attempts Failed
-![Figure](./sshanalysis_result_ignore5.png)
+![Figure](./sshanalysis_result_group_by_countries.png)
 
 Top 10 IPs Where SSH Login Attempts Failed
 ![Figure](./sshanalysis_result_group_by_ip.png)
