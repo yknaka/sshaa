@@ -9,7 +9,7 @@ def _requires_from_file(filename):
 
 setuptools.setup(
     name="sshaa",
-    version="1.3.0",
+    version="2.0.0",
     author="Yuki NAKAMURA",
     author_email="naka_yk@live.jp",
     description="Analyze auth.log",
