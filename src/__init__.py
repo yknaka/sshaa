@@ -1,2 +1,2 @@
-import yknsshanalysis
+import sshaa
 import __main__
