@@ -1,14 +1,14 @@
-# yknsshanalysis
+# sshaa
 
 Linuxサーバの一つであるUbuntu OSにおいてsshアクセスが記録されるauth.logを読み込み、不正ログインを分析する。
 sshによるログイン試行のうち、ログイン失敗が記録されたものについて、IPアドレスの所属国と出現回数を分析し、視覚化する。
 出力はCSVリストおよび円グラフ。
 
 # install
-pip install -U yknsshanalysis
+pip install -U sshaa
 
 # uninstall
-pip uninstall -y yknsshanalysis
+pip uninstall -y sshaa
 
 
 # オプション
@@ -49,4 +49,4 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 デフォルトは"sshanalysis_ip_countlist.csv"
 
 # Example
-yknsshanalysis addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
+sshaa addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
