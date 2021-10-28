@@ -8,16 +8,16 @@ def _requires_from_file(filename):
 
 
 setuptools.setup(
-    name="yknsshanalysis",
+    name="sshaa",
     version="1.3.0",
     author="Yuki NAKAMURA",
     author_email="naka_yk@live.jp",
     description="Analyze auth.log",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yknaka/yknsshanalysis",
+    url="https://github.com/yknaka/sshaa",
     project_urls={
-        "Analyze ssh auth.log": "https://github.com/yknaka/yknsshanalysis",
+        "Analyze ssh auth.log": "https://github.com/yknaka/sshaa",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -25,13 +25,13 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "src"},
-    py_modules=['yknsshanalysis'],
+    py_modules=['sshaa'],
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
     install_requires=_requires_from_file('requirements.txt'),
     entry_points={
         'console_scripts': [
-            'yknsshanalysis = yknsshanalysis:main'
+            'sshaa = sshaa:main'
         ]
     },
 )
