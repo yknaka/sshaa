@@ -5,6 +5,7 @@ import requests
 import time
 import circlify
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import pickle
 import consoleoptions as get_option
 
@@ -12,6 +13,7 @@ whois_list = ["http://ipinfo.io/xxx", "http://ipwhois.app/json/xxx", "https://ip
 
 
 def main(args=sys.argv):
+  df_ccode = pd.read_table("./Countries.csv", delimiter=",")
   # オプションの初期値を設定
   optionDict = {}
   optionDict["log"] = "/var/log/auth.log"
@@ -71,18 +73,21 @@ def main(args=sys.argv):
     print("...loading whois history")
     dic_ip_history = loadLibrary(optionDict["ip_dict"])
   print("operating whois")
-  df_ct_ip_freq, dic_ip_history = do_whois(df_iphifreq, dic_ip_history, optionDict)
+  df_ct_ip_freq, dic_ip_history = do_whois(df_iphifreq, dic_ip_history, df_ccode, optionDict)
   if dic_ip_history is not None:
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
+  df_ct_ip_freq = convert_country_name(df_ct_ip_freq, df_ccode, optionDict)
+  print("***result+++")
   print(df_ct_ip_freq.head(optionDict["show_top"]))
+  print("************")
   print("grouping countries")
   if group_by_ip:
     dfs_list = list_by_ip(df_ct_ip_freq)
   else:
     dfs_list = list_by_country(df_ct_ip_freq)
   export_csv(df_ipfreq, df_ct_ip_freq, optionDict, export_name)
-  show_graph(dfs_list, optionDict, export_name)
+  show_graph(dfs_list, df_ccode, optionDict, export_name)
 
 
 # for Ubuntu auth.log
@@ -170,13 +175,15 @@ def whoisCountry(whois_url, ip_address, defaultValue):
   url = whois_url.replace('xxx', ip_address)
   response = requests.get(url, headers=headers)
   data = response.json()
-  if "country" in data:
+  if "country_code" in data:
+    return data["country_code"].upper()
+  elif "country" in data:
     return data["country"]
   else:
     return defaultValue
 
 
-def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
+def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, optionDict):
   dic_country = {}
   is_ip_history_enabled = dic_ip_history is not None
   nowtime = time.time()
@@ -195,6 +202,12 @@ def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
           country = whoisCountry(url, ip_address, "N/A")
           if country != "N/A":
             break
+        if len(country) != 2:
+          ser = df_ccode[df_ccode['COUNTRY NAME'] == country.upper()]
+          if ser.empty:
+            print("No Matching Country Found:", country)
+          else:
+            country = ser["CODE"].iloc[-1]
         dic_ip_history[ip_address] = {"name": country, "register": time.time()}
       dic_country[ip_address] = country
   else:
@@ -203,6 +216,21 @@ def do_whois(df_ip_and_frequency, dic_ip_history, optionDict):
   df_ip_country_frequency = pd.DataFrame({"country": dic_country})
   df_ip_country_frequency['count'] = df_ip_and_frequency['count']
   return df_ip_country_frequency, dic_ip_history
+
+
+def convert_country_name(df_ip_country_frequency, df_ccode, optionDict):
+  if "show_ja_country_name" in optionDict:
+    key = '国名'
+  elif "show_country_name" in optionDict:
+    key = 'COUNTRY NAME'
+  else:
+    return df_ip_country_frequency
+  # dict作成
+  dic_conv = {}
+  for i, v in df_ccode.iterrows():
+    dic_conv[v['CODE']] = v[key]
+  df_ip_country_frequency.replace(dic_conv, inplace=True)
+  return df_ip_country_frequency
 
 
 def list_by_country(df_ip_country_frequency):
@@ -226,7 +254,7 @@ def list_by_ip(df_ip_country_frequency):
   return country_frequency_list
 
 
-def show_graph(country_frequency_list, optionDict, export_name):
+def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
   count = 0
   top_country = []
   top_attack = []
@@ -246,7 +274,7 @@ def show_graph(country_frequency_list, optionDict, export_name):
   )
 
   fig, ax = plt.subplots(figsize=(10, 10))
-  ax.set_title('sshanalysis')
+  ax.set_title('ssh analysis')
   ax.axis('off')
 
   lim = max(
@@ -258,6 +286,10 @@ def show_graph(country_frequency_list, optionDict, export_name):
   )
   plt.xlim(-lim, lim)
   plt.ylim(-lim, lim)
+  # set Japanese font if show_ja_country_name frag is active
+  if "show_ja_country_name" in optionDict:
+    rcParams['font.family'] = 'sans-serif'
+    rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meiryo', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
   labels = top_country
   for circle, label in zip(circles, labels):
     x, y, r = circle
@@ -269,7 +301,8 @@ def show_graph(country_frequency_list, optionDict, export_name):
         ha='center'
     )
   plt.savefig(export_name["graph"])
-  plt.show()
+  if "dont_show_gui_graph" not in optionDict:
+    plt.show()
 
 
 def export_csv(df_ipfreq, df_ip_country_frequency, optionDict, export_name):

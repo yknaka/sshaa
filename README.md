@@ -47,7 +47,23 @@ auth.logファイルの場所を指定。初期値は/var/log/auth.log
 WHOIS で取得した値を保持する期間。期限が過ぎた参照値は取得し直す。デフォルト値は30日。
 
 ## whois_url
-IPアドレスからアクセス元の国名を取得する際に参照するAPIのアドレス。"whois_url=auto"を指定するとリストから正しく取得できるものを巡回する。
+IPアドレスからアクセス元の国名を取得する際に参照するAPIのアドレス。"whois_url=auto"を指定するとプリセットリストから正しく取得できるものを巡回する。
+正しく取得できない原因としてはWhois APIのアクセス数制限等が考えられる。
+
+Whoisの取得先を直接指定する場合、正しく取得できる条件は、現状下記1パターンのみ。
+
+1. アクセス先のURLにWHOISを行うIPアドレスを入力でき、json形式でレスポンスを取得できる
+
+https://*****.com/1.2.3.4/json など
+
+この場合、IPアドレスの入力箇所を'xxx'として
+
+```
+whois_url="https://*****.com/xxx/json
+```
+
+と入力する
+
 
 ## ip_dict
 WHOIS APIで判明した国名を保存し、次回以降キャッシュを利用することで高速化をはかる。デフォルトはキャッシュONでファイル名は"ip_whois_history.pkl"
@@ -56,6 +72,12 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 
 ## group_by_ip
 分析内容を変更するフラグ。このフラグが存在する場合、国別の集計を行わなわず、アクセス元IPアドレスと所属国および攻撃数を表示する。
+
+## show_country_name
+国名の表示方法を変更するフラグ。このフラグが存在する場合、国名がフルネームで表示される。
+
+## show_ja_country_name
+国名の表示方法を変更するフラグ。このフラグが存在する場合、国名が日本語フルネームで表示される。
 
 ## export_graph_name
 分析内容（デフォルトではsshでのログイン試行のうち、ログインに失敗したパターンにおけるアクセス元IPアドレスの所属国分析）を示すグラフのファイル名を変更する。デフォルトは"sshanalysis_result.png"
@@ -70,5 +92,13 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 "export_all_ip"オプションを指定した場合、ログファイル内のすべてのIPアドレスと出現回数のリストをCSV形式で保存する。本設定で出力されるCSVファイル名を指定できる。
 デフォルトは"sshanalysis_ip_countlist.csv"
 
+## dont_show_gui_graph
+グラフを画面表示しないフラグ。グラフのファイル出力はフラグによらず行われる。
+
+
 # Example
 sshaa addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
+
+# Appendix
+##Countries.csv
+Quoted by [National Diet Library](https://iss.ndl.go.jp/help/help_ja/help_country_codes.html)(Oct. 28, 2021)
