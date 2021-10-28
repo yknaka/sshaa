@@ -34,17 +34,17 @@ pip uninstall -y sshaa
 
 
 # Options
-## addr
-auth.logファイルの場所を指定。初期値は/var/log/auth.log
+## log(またはaddr)
+auth.logファイルの場所を指定。初期値は"/var/log/auth.log"
 
 ## show_top
-解析結果のグラフ表示の際、アクセス元上位何カ国を表示するか指定。初期値は5カ国。
+解析結果のグラフ表示の際、アクセス元上位何カ国を表示するか指定。初期値は5。
 
 ## ignore_less
-同一IPからのアクセスが指定回数以下の場合カウントから除外する。初期値は50回。
+同一IPからのアクセスが指定回数以下の場合カウントから除外する。初期値は50。
 
 ## expire_whois
-WHOIS で取得した値を保持する期間。期限が過ぎた参照値は取得し直す。デフォルト値は30日。
+WHOIS で取得した値を保持する期間(秒)。期限が過ぎた参照値は取得し直す。デフォルト値は2592000(30日)。
 
 ## whois_url
 IPアドレスからアクセス元の国名を取得する際に参照するAPIのアドレス。"whois_url=auto"を指定するとプリセットリストから正しく取得できるものを巡回する。
@@ -59,22 +59,28 @@ https://*****.com/1.2.3.4/json など
 この場合、IPアドレスの入力箇所を'xxx'として
 
 ```
-whois_url="https://*****.com/xxx/json
+whois_url="https://*****.com/xxx/json"
 ```
 
-と入力する
+と入力する。
 
 
 ## ip_dict
 WHOIS APIで判明した国名を保存し、次回以降キャッシュを利用することで高速化をはかる。デフォルトはキャッシュONでファイル名は"ip_whois_history.pkl"
 
-キャッシュを利用しない場合は"ip_dict=None"と入力する
+キャッシュを利用しない場合は
+
+```
+  ip_dict=None
+```
+
+と入力する。
 
 ## group_by_ip
 分析内容を変更するフラグ。このフラグが存在する場合、国別の集計を行わなわず、アクセス元IPアドレスと所属国および攻撃数を表示する。
 
 ## show_country_name
-国名の表示方法を変更するフラグ。このフラグが存在する場合、国名がフルネームで表示される。
+国名の表示方法を変更するフラグ。このフラグが存在する場合、国名がフルネームで表示される。show_ja_country_nameフラグが存在する場合、show_ja_country_nameフラグが優先される。
 
 ## show_ja_country_name
 国名の表示方法を変更するフラグ。このフラグが存在する場合、国名が日本語フルネームで表示される。
@@ -97,7 +103,13 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 
 
 # Example
-sshaa addr='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
+``` console
+  sshaa log='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
+```
+
+``` Python3
+  python3 src/sshaa.py log='./auth.log' show_top=6 ignore_less=100 whois_url="http://ipwhois.app/json/xxx" ip_dict="dict.pkl" export_graph_name="result.png" export_all_ip
+```
 
 # Appendix
 ##Countries.csv
