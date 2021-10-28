@@ -2,7 +2,29 @@
 
 Linuxサーバの一つであるUbuntu OSにおいてsshアクセスが記録されるauth.logを読み込み、不正ログインを分析する。
 sshによるログイン試行のうち、ログイン失敗が記録されたものについて、IPアドレスの所属国と出現回数を分析し、視覚化する。
-出力はCSVリストおよび円グラフ。
+
+# Outputs
+## Graph
+Top 5 Countries of IPs Where SSH Login Attempts Failed
+![Figure](./sshanalysis_result_ignore5.png)
+
+Top 10 IPs Where SSH Login Attempts Failed
+![Figure](./sshanalysis_result_group_by_ip.png)
+
+## CSV
+```
+,country,count
+113.88.13.132,CN,14883
+61.177.172.13,CN,1625
+221.181.185.153,KR,1264
+222.187.232.205,CN,1235
+221.181.185.198,AU,1212
+221.181.185.159,KR,1187
+221.131.165.56,CN,1072
+221.181.185.135,KR,1043
+221.181.185.220,CN,1037
+222.187.239.109,China,966
+```
 
 # install
 pip install -U sshaa
@@ -11,7 +33,7 @@ pip install -U sshaa
 pip uninstall -y sshaa
 
 
-# オプション
+# Options
 ## addr
 auth.logファイルの場所を指定。初期値は/var/log/auth.log
 
