@@ -14,18 +14,19 @@ whois_list = ["http://ipwhois.app/json/{ip}", "https://ipapi.co/{ip}/json", "htt
 
 def main(args=sys.argv):
   df_ccode = pd.read_table("./Countries.csv", delimiter=",")
-  # オプションの初期値を設定
+  # default option value
   optionDict = {}
   optionDict["log"] = "/var/log/auth.log"
   optionDict["show_top"] = 5
   optionDict["ignore_less"] = 50
   optionDict["whois_url"] = "http://ipwhois.app/json/{ip}"
   optionDict["ip_dict"] = "ip_whois_history.pkl"
-  optionDict["expire_whois"] = 30 * 24 * 3600  # 有効期限のデフォルト値は30日
+  optionDict["show_country_name_as"] = "COUNTRY NAME"
+  optionDict["expire_whois"] = 30 * 24 * 3600  # 30 days
   export_name = {"graph": "sshanalysis_result.png",
                  "graph_csv": "sshanalysis_result.csv",
                  "count_csv": "sshanalysis_ip_countlist.csv"}
-  # オプションの代入処理
+  # map option value from sys.argv
   if type(args) is str:
     args = [args]
   optionDict = get_option.get_dict(args, optionDict)
@@ -42,12 +43,12 @@ def main(args=sys.argv):
     export_name["graph_csv"] = optionDict["export_csv_name"]
   if "export_iplist_name" in optionDict:
     export_name["count_csv"] = optionDict["export_iplist_name"]
-  # 旧版との互換性
+  # old version compatibility
   if "addr" in optionDict:
     optionDict["log"] = optionDict["addr"]
   group_by_ip = "group_by_ip" in optionDict
 
-  # メイン処理
+  # main process
   print("reading auth.log file...")
   try:
     df = pd.read_table(optionDict["log"], header=None)
@@ -90,7 +91,7 @@ def main(args=sys.argv):
   show_graph(dfs_list, df_ccode, optionDict, export_name)
 
 
-# for Ubuntu auth.log
+# for Ubuntu and Devian auth.log
 def create_ip_count_df_fast(df_log):
   ip_list = []
   for index, row in df_log.iterrows():
@@ -104,7 +105,7 @@ def create_ip_count_df_fast(df_log):
   return pd.DataFrame({'count': pd.DataFrame(ip_list, columns=['ip']).ip.value_counts()})
 
 
-# for Ubuntu auth.log
+# for Ubuntu and Devian auth.log
 def create_ip_count_df(df_log):
   ip_arr = []
   for index, row in df_log.iterrows():
@@ -219,13 +220,11 @@ def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, optionDict):
 
 
 def convert_country_name(df_ip_country_frequency, df_ccode, optionDict):
-  if "show_ja_country_name" in optionDict:
-    key = '国名'
-  elif "show_country_name" in optionDict:
-    key = 'COUNTRY NAME'
+  if "show_country_name_as" in optionDict:
+    key = optionDict["show_country_name_as"]
   else:
     return df_ip_country_frequency
-  # dict作成
+  # create code dictionary
   dic_conv = {}
   for i, v in df_ccode.iterrows():
     dic_conv[v['CODE']] = v[key]
@@ -264,7 +263,6 @@ def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
     count += 1
     if count >= optionDict["show_top"]:
       break
-  # circleのサイズの設定方法がわからないので力技
   top_country.reverse()
   df = pd.DataFrame(country_frequency_list)
   circles = circlify.circlify(
@@ -287,7 +285,7 @@ def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
   plt.xlim(-lim, lim)
   plt.ylim(-lim, lim)
   # set Japanese font if show_ja_country_name frag is active
-  if "show_ja_country_name" in optionDict:
+  if "show_country_name_as" in optionDict and optionDict['show_country_name_as'] == "ja":
     rcParams['font.family'] = 'sans-serif'
     rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meiryo', 'Takao', 'IPAexGothic', 'IPAPGothic', 'VL PGothic', 'Noto Sans CJK JP']
   labels = top_country

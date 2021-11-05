@@ -1,7 +1,7 @@
 # sshaa
 
-Linuxサーバの一つであるUbuntu OSにおいてsshアクセスが記録されるauth.logを読み込み、不正ログインを分析する。
-sshによるログイン試行のうち、ログイン失敗が記録されたものについて、IPアドレスの所属国と出現回数を分析し、視覚化する。
+This program reads 'auth.log', which records ssh accesses in Ubuntu and Devian OS, ones of the Linux servers, and analyzes unauthorized accesses.
+This program also analyzes and visualizes the country of the IP address and the number of times the IP address appears in the ssh login attempts where login failures are recorded.
 
 # Outputs
 ## Graph
@@ -11,7 +11,7 @@ Top 5 Countries of IPs Where SSH Login Attempts Failed
 Top 10 IPs Where SSH Login Attempts Failed
 ![Figure](https://github.com/yknaka/sshaa/blob/main/sshanalysis_result_group_by_ip.png)
 
-## CSV
+## CSV report
 ```
 ,country,count
 113.88.13.132,CN,14883
@@ -35,74 +35,110 @@ pip uninstall -y sshaa
 
 # Options
 ## log(またはaddr)
-auth.logファイルの場所を指定。初期値は"/var/log/auth.log"
+Specify the location of 'auth.log'.
+
+The default value is "/var/log/auth.log".
 
 ## show_top
-解析結果のグラフ表示の際、アクセス元上位何カ国を表示するか指定。初期値は5。
+Specify how many countries are diplayed in the graph.
+
+The default value is 5.
 
 ## ignore_less
-同一IPからのアクセスが指定回数以下の場合カウントから除外する。初期値は50。
+Specify the threshold value to exclude from the count when the number of accesses from the same IP is less than the number.
+
+The default value is 50.
 
 ## expire_whois
-WHOIS で取得した値を保持する期間(秒)。期限が過ぎた参照値は取得し直す。デフォルト値は2592000(30日)。
+How long (in seconds) to keep the value retrieved by WHOIS. When the expiration date has passed, the reference value will be retrieved again.
+
+The default value is 2592000 (30 days).
 
 ## whois_url
-IPアドレスからアクセス元の国名を取得する際に参照するAPIのアドレス。"whois_url=auto"を指定するとプリセットリストから正しく取得できるものを巡回する。
-正しく取得できない原因としてはWhois APIのアクセス数制限等が考えられる。
+Specify the URL of the API to refer to when retrieving the country name of the access source from the IP.
 
-Whoisの取得先を直接指定する場合、正しく取得できる条件は、現状下記1パターンのみ。
+If "whois_url=auto" is descripted, this program will cycle through the preset list to find the one that can be retrieved correctly.
 
-1. アクセス先のURLにWHOISを行うIPアドレスを入力でき、json形式でレスポンスを取得できる
+The reason for not being able to obtain the correct information maybe the limitation of the access attempts of WHOIS API services.
 
-https://*****.com/1.2.3.4/json など
+When directly specifying the WHOIS API URL, there is currently only one condition under which the WHOIS can be obtained correctly.
 
-この場合、IPアドレスの入力箇所を'{ip}'として
+1. You can get the IP address for WHOIS and get the response in json format.
+
+For Example:
+
+https://*****.com/1.2.3.4/json
+
+In this case, enter the IP address you want to do WHOIS as '{IP}'
+
+such as
 
 ```
 whois_url="https://*****.com/{ip}/json"
 ```
 
-と入力する。
-
 
 ## ip_dict
-WHOIS APIで判明した国名を保存し、次回以降キャッシュを利用することで高速化をはかる。デフォルトはキャッシュONでファイル名は"ip_whois_history.pkl"
+This program usually save the country names found by the WHOIS API and use the cache to speed up the process next time.
 
-キャッシュを利用しない場合は
+The default is cache ON and the file name is "ip_whois_history.pkl".
+
+When you want NOT to use cache,
+
+Use this option.
 
 ```
   ip_dict=None
 ```
 
-と入力する。
-
 ## group_by_ip
-分析内容を変更するフラグ。このフラグが存在する場合、国別の集計を行わなわず、アクセス元IPアドレスと所属国および攻撃数を表示する。
+Flag to change the analysis.
+
+When this flag is present, the source IP address, country, and number of attacks will be displayed instead of being aggregated by country.
 
 ## show_country_name
-国名の表示方法を変更するフラグ。このフラグが存在する場合、国名がフルネームで表示される。show_ja_country_nameフラグが存在する場合、show_ja_country_nameフラグが優先される。
+Specify how to display the country names.
 
-## show_ja_country_name
-国名の表示方法を変更するフラグ。このフラグが存在する場合、国名が日本語フルネームで表示される。
+If this flag is present, the country name will be displayed in the manner specified by 'show_country_name_as'.
+
+## show_country_name_as
+Flag to change the way the country name is displayed.
+
+The display name will be selected from the columns that match the column names in 'Countries.csv'.
+
+The defualt value is 'COUNTRY NAME'.
 
 ## export_graph_name
-分析内容（デフォルトではsshでのログイン試行のうち、ログインに失敗したパターンにおけるアクセス元IPアドレスの所属国分析）を示すグラフのファイル名を変更する。デフォルトは"sshanalysis_result.png"
+Change the file name of the analysis result graph. 
+
+The default value is "sshanalysis_result.png".
 
 ## export_csv_name
-グラフの示す数値がリスト形式で出力される。本設定で出力されるCSVファイル名を指定できる。デフォルトは"sshanalysis_result.csv"
+The values shown in the graph are output in CSV format.
+
+You can specify the name of the list file to be output with this setting.
+
+The default is "sshanalysis_result.csv".
 
 ## export_all_ip:
-ログファイル内に存在するすべてのIPアドレスと出現回数のリストを出力するフラグ。出力先は"export_iplist_name"で指定する。
+Flag to output the list of all IP addresses and the number of occurrences in the log file. 
+
+The output destination is specified by "export_iplist_name".
 
 ## export_iplist_name
-"export_all_ip"オプションを指定した場合、ログファイル内のすべてのIPアドレスと出現回数のリストをCSV形式で保存する。本設定で出力されるCSVファイル名を指定できる。
-デフォルトは"sshanalysis_ip_countlist.csv"
+If the "export_all_ip" option is specified, the list of all IP addresses and the number of occurrences in the log file will be saved in CSV format.
+
+You can specify the name of the CSV file to be output with this setting.
+
+The default value is "sshanalysis_ip_countlist.csv".
 
 ## dont_show_gui_graph
-グラフを画面表示しないフラグ。グラフのファイル出力はフラグによらず行われる。
+Flag for not displaying the result graph on the screen.
+
+File output of graphs is performed regardless of the flag.
 
 ## mask_ip
-IPアドレスを\*\*\*.\*\*\*.\*\*\*で表示する。
+Display IP addresses as\*\*\*.\*\*\*.\*\*\*.
 
 # Example
 ``` console

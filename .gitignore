@@ -5,3 +5,4 @@ sshanalysis_result.png
 sshanalysis_result.csv
 ip_whois_history.pkl
 auth.log
+dict.pkl
