@@ -272,7 +272,8 @@ def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
   )
 
   fig, ax = plt.subplots(figsize=(10, 10))
-  ax.set_title('ssh analysis - Number of Failed Login Attempts - ')
+  title = 'ssh-attacks from malicious IPs'
+  ax.set_title(title)
   ax.axis('off')
 
   lim = max(
