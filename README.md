@@ -96,6 +96,14 @@ Flag to change the analysis.
 
 When this flag is present, the source IP address, country, and number of attacks will be displayed instead of being aggregated by country.
 
+# aa
+Flag to analyze what kind of attack was done.
+
+# aa_result_name
+Specify the output name of the attack analysis result(above 'aa').
+
+The defualt value is 'aa_analysis.csv'.
+
 ## show_country_name
 Specify how to display the country names.
 

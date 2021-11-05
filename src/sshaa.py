@@ -1,5 +1,6 @@
 # coding: UTF-8
 import sys
+import os
 import pandas as pd
 import requests
 import time
@@ -8,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import pickle
 import consoleoptions as get_option
+import datetime
 
 whois_list = ["http://ipwhois.app/json/{ip}", "https://ipapi.co/{ip}/json", "http://ipinfo.io/{ip}"]
 
@@ -52,6 +54,7 @@ def main(args=sys.argv):
   print("reading auth.log file...")
   try:
     df = pd.read_table(optionDict["log"], header=None)
+    lastmodified = datetime.datetime.fromtimestamp(os.path.getmtime(optionDict["log"]))
   except Exception as e:
     print("Some thing error has occurred during reading logfile.")
     print("Please check your file.")
@@ -60,7 +63,10 @@ def main(args=sys.argv):
   print("analyzing log")
   df_log = df[df[0].str.contains("Failed|Invalid user")]
   # Extract unauthorized access->count same IPs
-  df_ipfreq = create_ip_count_df_fast(df_log)
+  if 'aa' in optionDict:
+    df_ipfreq = create_ip_count_df(df_log, lastmodified)
+  else:
+    df_ipfreq = create_ip_count_df_fast(df_log)
   # Ignore unauthorized access from the same IP if it is below a certain level
   if group_by_ip:
     df_iphifreq = df_ipfreq.sort_values(by="count", ascending=False).head(optionDict["show_top"])
@@ -79,6 +85,9 @@ def main(args=sys.argv):
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
   df_ct_ip_freq = convert_country_name(df_ct_ip_freq, df_ccode, optionDict)
+  if 'aa' in optionDict:
+    print("...analyzing attacks detail")
+    aa_analysis(df_ipfreq)
   print("***result***")
   print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("************")
@@ -106,10 +115,17 @@ def create_ip_count_df_fast(df_log):
 
 
 # for Ubuntu and Devian auth.log
-def create_ip_count_df(df_log):
+def create_ip_count_df(df_log, lastmodified=datetime.datetime.now()):
   ip_arr = []
   for index, row in df_log.iterrows():
     s = row[0]
+    # time取得
+    idx = s.find(': ')
+    if idx != -1:
+      s_ = s[0:idx]
+      s_split = s_.split(' ')
+      time_str = ''.join([str(lastmodified.year), ",", s_split[0], ",", s_split[1], ",", s_split[2]])
+      time = datetime.datetime.strptime(time_str, "%Y,%b,%d,%H:%M:%S")
     # Failed password for xxx,Failed password for invalid user xxx,Invalid user xxx
     stw = 'Invalid user '
     edw = 'from '
@@ -143,8 +159,8 @@ def create_ip_count_df(df_log):
     if idx2 == -1:
       idx2 = len(s)
     port = s[idx + len(stw):idx2]
-    ip_arr.append([ip, user, port, failPasswd])
-  sr_ipcnt = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk']).ip.value_counts()
+    ip_arr.append([ip, user, port, failPasswd, time])
+  sr_ipcnt = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk', 'time']).ip.value_counts()
   return pd.DataFrame({'count': sr_ipcnt})
 
 
@@ -217,6 +233,11 @@ def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, optionDict):
   df_ip_country_frequency = pd.DataFrame({"country": dic_country})
   df_ip_country_frequency['count'] = df_ip_and_frequency['count']
   return df_ip_country_frequency, dic_ip_history
+
+
+def aa_analysis(df_ipfreq):
+  print("do something.")
+  return
 
 
 def convert_country_name(df_ip_country_frequency, df_ccode, optionDict):
