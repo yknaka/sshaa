@@ -48,6 +48,9 @@ ssh-daemonログファイル：auth.log(Devian系OSまたはUbuntuOS)またはse
 ### ignore_less
 同一IPからのアクセスが指定回数以下の場合カウントから除外する。初期値は50。
 
+### show_top
+解析結果のグラフ表示の際、アクセス元上位何カ国を表示するか指定する。初期値は5。
+
 ### expire_whois
 WHOIS で取得した値を保持する期間(秒)。期限が過ぎた参照値は取得し直す。デフォルト値は2592000(30日)。
 
@@ -88,13 +91,12 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 
 分析結果は、'export_aa_stat_name'や'export_aa_stat_by_ip_name'で指定するファイルに出力される。
 
+'alert_ip'リストにマッチするIPが存在した場合、'export_alert_aa_stat_name'や'export_alert_aa_stat_by_ip_name'も出力される。
+
 ### export_all_ip:
 ログファイル内に存在するすべてのIPアドレスと出現回数のリストを出力するフラグ。出力先は"export_iplist_name"で指定する。
 
 出力先は'export_iplist_name'で指定する。
-
-### show_top
-解析結果のグラフ表示の際、アクセス元上位何カ国を表示するか指定する。初期値は5。
 
 ### alert_ip
 不正アクセス元のIPアドレスがここで指定するリストに存在した場合に別途ファイルを出力し、警告を表示させる。
@@ -140,7 +142,7 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 国名の表示方法を指定する。'Countries.csv'の列名と一致する列から表示名が選択される。デフォルトは'COUNTRY NAME'
 
 ## mask_ip
-IPアドレスを\*\*\*.\*\*\*.\*\*\*で表示する。
+IPアドレスを\*\*\*.\*\*\*.\*\*\*.\*\*\*で表示する。
 
 
 ## Export

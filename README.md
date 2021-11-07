@@ -13,7 +13,7 @@ Top 10 IPs Where SSH Login Attempts Failed
 
 ## CSV report
 ```
-,country,count
+IP Address,country,count
 113.88.13.132,CN,14883
 61.177.172.13,CN,1625
 221.181.185.153,KR,1264
@@ -38,7 +38,7 @@ pip uninstall -y sshaa
 ### option_file
 Set options by JSON file.
 
-If it is specified at the same time as other options, 'option_file' takes precedence.
+If 'option_file' and other options are set simultaneously, 'option_file' takes precedence.
 
 ### log
 Specify the location of 'auth.log'(Devian or Ubuntu ssh-daemon log file) or 'secure'(CentOS ssh-daemon log file).
@@ -47,9 +47,14 @@ The default value is "/var/log/auth.log".
 
 ## Analysis Settings
 ### ignore_less
-Specify the threshold value to exclude from the count when the number of accesses from the same IP is less than the number.
+If the number of access attempts from the same IP is less than this value, it will be excluded from the analysis.
 
 The default value is 50.
+
+### show_top
+Set the maximum number of items to be output to the console and graphs.
+
+The default value is 5.
 
 ### expire_whois
 How long (in seconds) to keep the value retrieved by WHOIS. When the expiration date has passed, the reference value will be retrieved again.
@@ -99,21 +104,18 @@ When this flag is present, the source IP address, country, and number of attacks
 
 
 ### aa
-Flag to analyze what kind of attack was done.
+Flag to analyze the attack attempts.
 
 If this option is active, the log will be analyzed for the login name, port number, and whether or not the password was entered (True or False), which can be obtained from the ssh log.
 
 The analysis results will be output to the file specified by 'export_aa_stat_name' or 'export_aa_stat_by_ip_name'.
 
+If the IP matches the condition specified in 'alert_ip', 'export_alert_aa_stat_name' and 'export_alert_aa_stat_by_ip_name' will also be active.
+
 ### export_all_ip:
 Flag to output the list of all IP addresses and the number of occurrences in the log file. 
 
 The output destination is specified by "export_iplist_name".
-
-### show_top
-Specify how many countries are diplayed in the graph.
-
-The default value is 5.
 
 ### alert_ip
 When the IP address of the unauthorized access exists in the list specified here, a result file will be output and a warning will be displayed in the console.
@@ -160,23 +162,23 @@ For Example:
 ### dont_show_graph
 Flag for not displaying the result graph on the screen.
 
-File output of graphs is performed regardless of the flag.
+File output of graphs is performed regardless of this flag.
 
 ## View Settings
 ### show_country_name
-Specify how to display the country names.
+Flag to change the way the country name is displayed.
 
-If this flag is present, the country name will be displayed in the manner specified by 'show_country_name_as'.
+If this flag is active, the country name will be displayed in the manner specified by 'show_country_name_as'.
 
 ### show_country_name_as
-Flag to change the way the country name is displayed.
+Specify how to display the country names.
 
 The display name will be selected from the columns that match the column names in 'Countries.csv'.
 
 The defualt value is 'COUNTRY NAME'.
 
 ### mask_ip
-Display IP addresses as\*\*\*.\*\*\*.\*\*\*.
+Display IP addresses as \*\*\*.\*\*\*.\*\*\*.\*\*\*
 
 ## Export
 ### export_graph_name
@@ -199,33 +201,33 @@ You can specify the name of the CSV file to be output with this setting.
 The default value is "sshanalysis_ip_countlist.csv".
 
 ### export_aa_stat_name
-Specifies the output destination of the attack analysis performed by option 'aa'.
+Set the output destination of the attack analysis performed by option 'aa'.
 
 The default value is "attack_analysis_stat.csv".
 
 Outputs the analysis results of access source IP, login attempt user name, port number, and password input (True or False) from the access log.
 
 ### export_aa_stat_by_ip_name
-Specifies the output destination of the attack analysis performed by option 'aa'.
+Set the output destination of the attack analysis performed by option 'aa'.
 
 The default value is "attack_analysis_stat_by_ip.csv".
 
 Outputs the analysis results of the user name, port number, and whether or not password are entered (True or False) for each IP from the access log.
 
 ### export_alert_report_name
-Specify the output destination of IP addresses and access attempts that exist in the range registered in 'alert_ip'.
+Set the output destination of IP addresses and access attempts that exist in the range registered in 'alert_ip'.
 
-If there is no IP in the registered list range, the file will not be output.
+If there are no matching IPs in the list, the file will not be output.
 
 The default name is "alert_result.csv".
 
 
 ### export_alert_aa_stat_name
-Specifies the output destination of the attack content analysis performed by option 'aa' for IP addresses and access attempts that exist in the range registered in 'alert_ip'.
+Set the output destination of the attack content analysis performed by option 'aa' for IP addresses and access attempts that exist in the range registered in 'alert_ip'.
 
 The output items are the same as 'export_aa_stat_name'.
 
-If there are no IPs in the registration list range, or if the option 'aa' is not specified, the file will not be output.
+If there are no matching IPs in the list, or if the option 'aa' is not active, the file will not be output.
 
 The default name is "alert_attack_analysis_stat.csv".
 
@@ -234,7 +236,7 @@ Specifies the output destination of the attack content analysis performed by opt
 
 The output items are the same as 'export_aa_stat_by_ip_name'.
 
-If there are no IPs in the registration list range, or if the option 'aa' is not specified, the file will not be output.
+If there are no matching IPs in the list, or if the option 'aa' is not active, the file will not be output.
 
 The default name is "alert_attack_analysis_stat_by_ip.csv".
 
