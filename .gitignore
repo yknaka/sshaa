@@ -6,3 +6,9 @@ sshanalysis_result.csv
 ip_whois_history.pkl
 auth.log
 dict.pkl
+secure
+alert_attack_analysis_stat.csv
+alert_attack_analysis_stat_by_ip.csv
+alert_ip_result.csv
+attack_analysis_stat.csv
+attack_analysis_stat_by_ip.csv

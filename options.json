@@ -1,0 +1,7 @@
+{
+  "log": "auth.log",
+  "show_top": 10,
+  "dont_show_graph": true,
+  "aa": true,
+  "export_all_ip": true
+}
