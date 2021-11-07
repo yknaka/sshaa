@@ -6,10 +6,10 @@ sshによるログイン試行のうち、ログイン失敗が記録された�
 # Outputs
 ## Graph
 Top 5 Countries of IPs Where SSH Login Attempts Failed
-![Figure](https://github.com/yknaka/sshaa/blob/main/sshanalysis_result_group_by_country.png)
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_country.png)
 
 Top 10 IPs Where SSH Login Attempts Failed
-![Figure](https://github.com/yknaka/sshaa/blob/main/sshanalysis_result_group_by_ip.png)
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_ip.png)
 
 ## CSV
 ```
