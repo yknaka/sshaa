@@ -100,7 +100,7 @@ def main(args=sys.argv):
   show_graph(dfs_list, df_ccode, optionDict, export_name)
 
 
-# for Ubuntu and Devian auth.log
+# for Ubuntu and Devian auth.log/secure
 def create_ip_count_df_fast(df_log):
   ip_list = []
   for index, row in df_log.iterrows():
@@ -114,7 +114,7 @@ def create_ip_count_df_fast(df_log):
   return pd.DataFrame({'count': pd.DataFrame(ip_list, columns=['ip']).ip.value_counts()})
 
 
-# for Ubuntu and Devian auth.log
+# for Ubuntu and Devian auth.log/secure
 def create_ip_count_df(df_log, lastmodified=datetime.datetime.now()):
   ip_arr = []
   for index, row in df_log.iterrows():

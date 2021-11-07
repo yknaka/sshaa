@@ -34,8 +34,8 @@ pip uninstall -y sshaa
 
 
 # Options
-## log(またはaddr)
-Specify the location of 'auth.log'.
+## log
+Specify the location of 'auth.log'(Devian or Ubuntu ssh-daemon log file) or 'secure'(CentOS ssh-daemon log file).
 
 The default value is "/var/log/auth.log".
 
