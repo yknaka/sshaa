@@ -1,8 +1,9 @@
 # coding: UTF-8
 import sys
 import os
-import time
-import datetime
+import time as t
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from ipaddress import ip_network
 import socket
 import pandas as pd
@@ -35,6 +36,10 @@ def main(args=sys.argv):
                  "aa_stat_ip": "attack_analysis_stat_by_ip.csv",
                  "aa_stat": "attack_analysis_stat.csv",
                  "graph": "sshanalysis_result.png",
+                 "week_graph": "sshanalysis_week_result.png",
+                 "week_graph_csv": "sshanalysis_week_result.csv",
+                 "week_alert_graph": "alert_sshanalysis_week_result.png",
+                 "week_alert_graph_csv": "alert_sshanalysis_week_result.csv",
                  "graph_csv": "sshanalysis_result.csv",
                  "count_csv": "sshanalysis_ip_countlist.csv"}
   # map option value from sys.argv
@@ -58,6 +63,10 @@ def main(args=sys.argv):
   set_export("export_aa_stat_by_ip_name", "aa_stat_ip", optionDict, export_name)
   set_export("export_graph_name", "graph", optionDict, export_name)
   set_export("export_csv_name", "graph_csv", optionDict, export_name)
+  set_export("export_weekday_graph", "week_graph", optionDict, export_name)
+  set_export("export_weekday_csv", "week_graph_csv", optionDict, export_name)
+  set_export("export_alert_weekday_graph", "alert_week_graph", optionDict, export_name)
+  set_export("export_alert_weekday_csv", "alert_week_graph_csv", optionDict, export_name)
   set_export("export_iplist_name", "count_csv", optionDict, export_name)
   # old version compatibility
   if "addr" in optionDict:
@@ -68,7 +77,7 @@ def main(args=sys.argv):
   print("reading auth.log file...")
   try:
     df = pd.read_table(optionDict["log"], header=None)
-    lastmodified = datetime.datetime.fromtimestamp(os.path.getmtime(optionDict["log"]))
+    lastmodified = datetime.fromtimestamp(os.path.getmtime(optionDict["log"]))
   except Exception as e:
     print("Some thing error has occurred during reading logfile.")
     print("Please check your file.")
@@ -78,18 +87,32 @@ def main(args=sys.argv):
   list_alert_ip, list_ignore_ip = load_alert_ip(optionDict["alert_ip"], optionDict["alert_ip_ignore"])
   print("  *** alert IP pattern :", str(len(list_alert_ip)), "***")
   print("  *** ignore IP pattern :", str(len(list_ignore_ip)), "***")
-  print("analyzing log")
+  bool_aa = 'aa' in optionDict
+  print('analyze log (detailed analysis)' if bool_aa else 'analyzing log')
   df_log = df[df[0].str.contains("Failed|Invalid user")]
   # Extract unauthorized access->count same IPs
-  if 'aa' in optionDict:
+  if bool_aa:
     df_ipfreq, df_log_aa = create_ip_count_df(df_log, lastmodified)
   else:
     df_ipfreq = create_ip_count_df_fast(df_log)
+  # Find alert IPs
+  list_aip = check_alert_condition(df_ipfreq, list_alert_ip, list_ignore_ip)
+  df_alert_ipfreq = df_ipfreq[df_ipfreq.index.isin(list_aip)]
+  if "dont_duplicate_alert" in optionDict:
+    df_ipfreq = df_ipfreq[~df_ipfreq.index.isin(list_aip)]
+  if bool_aa:
+    df_alert_log_aa = df_log_aa[df_log_aa.ip.isin(list_aip)]
+    if "dont_duplicate_alert" in optionDict:
+      df_ipfreq = df_ipfreq[~df_ipfreq.index.isin(list_aip)]
+      df_log_aa = df_log_aa[~df_log_aa.ip.isin(list_aip)]
+
   # Ignore unauthorized access from the same IP when it is below a certain level
   if group_by_ip:
     df_iphifreq = df_ipfreq.sort_values(by="count", ascending=False).head(optionDict["show_top"])
+    df_alert_iphifreq = df_alert_ipfreq.sort_values(by="count", ascending=False).head(optionDict["show_top"])
   else:
     df_iphifreq = df_ipfreq[df_ipfreq["count"] > optionDict["ignore_less"]]
+    df_alert_iphifreq = df_alert_ipfreq[df_alert_ipfreq["count"] > optionDict["ignore_less"]]
   # Load whois history
   if optionDict["ip_dict"] == "None":
     print("...whois cache has been ignored.")
@@ -98,7 +121,7 @@ def main(args=sys.argv):
     print("...loading whois history")
     dic_ip_history = loadLibrary(optionDict["ip_dict"])
   print("operating whois")
-  df_ct_ip_freq, dic_ip_history, df_alert_iphifreq = do_whois(df_iphifreq, dic_ip_history, df_ccode, list_alert_ip, list_ignore_ip, optionDict)
+  df_ct_ip_freq, dic_ip_history = do_whois(df_iphifreq, dic_ip_history, df_ccode, optionDict)
   if dic_ip_history is not None:
     print("...exporting whois history")
     saveLibrary(optionDict["ip_dict"], dic_ip_history)
@@ -106,12 +129,14 @@ def main(args=sys.argv):
   if len(df_alert_iphifreq) != 0:
     print("*** ", "\033[05;31m", "Malcious Access was Detected From Alerting IP List!!", "\033[0m", " ***")
     if 'aa' in optionDict:
-      dic_al_aa_by_ip, dic_al_aa_whole = aa_analysis(df_alert_iphifreq, df_log_aa)
+      dic_al_aa_by_ip, dic_al_aa_whole = aa_analysis(df_alert_iphifreq, df_alert_log_aa)
+      dic_al_aa_week = aa_analysis_weekday(df_alert_iphifreq, df_alert_log_aa)
     print(df_alert_iphifreq.head(optionDict["show_top"]))
     print('...alert list exported')
-  if 'aa' in optionDict:
+  if bool_aa:
     print("analyzing attacks detail")
     dic_aa_by_ip, dic_aa_whole = aa_analysis(df_ipfreq, df_log_aa)
+    dic_aa_week = aa_analysis_weekday(df_iphifreq, df_log_aa)
   print("***result***")
   print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("************")
@@ -122,20 +147,20 @@ def main(args=sys.argv):
     dfs_list = list_by_country(df_ct_ip_freq)
   # export
   if len(df_alert_iphifreq) != 0:
-    if 'aa' in optionDict:
+    if bool_aa:
       export_aa_dic2csv(dic_al_aa_by_ip, export_name["alert_aa_stat_ip"])
       export_aa_dic2csv(dic_al_aa_whole, export_name["alert_aa_stat"])
+      export_weekday_graph(dic_al_aa_week, export_name["week_alert_graph"], export_name["week_alert_graph_csv"])
     df_alert_iphifreq.to_csv(export_name["alert_ip_csv"], index_label=df_alert_iphifreq.columns.name)
-  if 'aa' in optionDict:
+  if bool_aa:
     export_aa_dic2csv(dic_aa_by_ip, export_name["aa_stat_ip"])
     export_aa_dic2csv(dic_aa_whole, export_name["aa_stat"])
-  else:
-    print("")
+    export_weekday_graph(dic_aa_week, export_name["week_graph"], export_name["week_graph_csv"])
   if "export_all_ip" in optionDict:
     df_ipfreq.sort_values(by="count", ascending=False).to_csv(export_name["count_csv"], index_label=df_ipfreq.columns.name)
   df_ct_ip_freq.sort_values(by="count", ascending=False).to_csv(export_name["graph_csv"], index_label=df_ct_ip_freq.columns.name)
   # make graph
-  show_graph(dfs_list, df_ccode, optionDict, export_name)
+  show_graph(dfs_list, optionDict, export_name)
 
 # list alert ip
 
@@ -165,11 +190,13 @@ def create_ip_count_df_fast(df_log):
     idx2 = s.find(edw, idx + len(stw))
     ip = s[idx + len(stw):idx2]
     ip_list.append(ip)
-  return pd.DataFrame({'count': pd.DataFrame(ip_list, columns=['ip']).ip.value_counts()})
+  df_ipfreq = pd.DataFrame({'count': pd.DataFrame(ip_list, columns=['ip']).ip.value_counts()})
+  df_ipfreq.columns.name = "IP Address"
+  return df_ipfreq
 
 
 # for Ubuntu and Devian auth.log/secure
-def create_ip_count_df(df_log, lastmodified=datetime.datetime.now()):
+def create_ip_count_df(df_log, lastmodified):
   ip_arr = []
   for index, row in df_log.iterrows():
     s = row[0]
@@ -179,7 +206,7 @@ def create_ip_count_df(df_log, lastmodified=datetime.datetime.now()):
       s_ = s[0:idx]
       s_split = s_.split()
       time_str = ''.join([str(lastmodified.year), ",", s_split[0], ",", s_split[1], ",", s_split[2]])
-      time = datetime.datetime.strptime(time_str, "%Y,%b,%d,%H:%M:%S")
+      time = datetime.strptime(time_str, "%Y,%b,%d,%H:%M:%S")
     # Failed password for xxx,Failed password for invalid user xxx,Invalid user xxx
     stw = 'Invalid user '
     edw = 'from '
@@ -213,10 +240,23 @@ def create_ip_count_df(df_log, lastmodified=datetime.datetime.now()):
     if idx2 == -1:
       idx2 = len(s)
     port = s[idx + len(stw):idx2]
-    ip_arr.append([ip, user, port, failPasswd, time])
-  df_log_aa = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk', 'time'])
+    ip_arr.append([ip, user, port, failPasswd, time, time.weekday()])
+  df_log_aa = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk', 'time', 'weekday'])
+  df_log_aa.columns.name = "IP Address"
+  # date noncorrespondance check
+  dif_date = df_log_aa.time.iloc[-1] - df_log_aa.time.iloc[0]
+  if dif_date < timedelta(seconds=0):
+    t1 = df_log_aa.time.iloc[-1]
+    for index in reversed(range(0, len(df_log_aa))):
+      t0 = df_log_aa.loc[index, 'time']
+      while(t1 < t0):
+        t0 = t0 - relativedelta(years=1)
+        df_log_aa.loc[index, 'time'] = t0
+      t1 = t0
   sr_ipcnt = df_log_aa.ip.value_counts()
-  return pd.DataFrame({'count': sr_ipcnt}), df_log_aa
+  df_ipfreq = pd.DataFrame({'count': sr_ipcnt})
+  df_ipfreq.columns.name = "IP Address"
+  return df_ipfreq, df_log_aa
 
 
 def saveLibrary(libaddr, my_dict):
@@ -240,6 +280,14 @@ def loadLibrary(libaddr):
     return {}
 
 
+def check_alert_condition(df_ipfreq, list_alert_ip, list_ignore_ip):
+  list_aip = []
+  for ip_address, v in df_ipfreq.iterrows():
+    if check_ip(ip_address, list_alert_ip, list_ignore_ip):
+      list_aip.append(ip_address)
+  return list_aip
+
+
 headers = {"content-type": "application/json"}
 
 
@@ -254,20 +302,14 @@ def whoisCountry(whois_url, ip_address):
   return data
 
 
-def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, list_alert_ip, list_ignore_ip, optionDict):
-  df_alert_ip_and_frequency = pd.DataFrame(columns=df_ip_and_frequency.columns)
-  df_alert_ip_and_frequency.columns.name = "IP Address"
+def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, optionDict):
   dic_whois = {}
   is_ip_history_enabled = dic_ip_history is not None
-  bool_ipfilter_exists = len(list_alert_ip) != 0 and len(list_ignore_ip) != 0
-  nowtime = time.time()
+  nowtime = t.time()
   if is_ip_history_enabled:
     for ip_address, v in df_ip_and_frequency.iterrows():
       country = None
       org = None
-      if bool_ipfilter_exists:
-        if check_alerting_ip(ip_address, list_alert_ip, list_ignore_ip):
-          df_alert_ip_and_frequency = df_alert_ip_and_frequency.append(pd.Series(v, name=ip_address))
       if ip_address in dic_ip_history:
         data = dic_ip_history[ip_address]
         if nowtime - data["register"] <= optionDict["expire_whois"]:
@@ -296,7 +338,7 @@ def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, list_alert_ip, list_
             print("No Matching Country Found:", country)
           else:
             country = ser["CODE"].iloc[-1]
-        dic_ip_history[ip_address] = {"name": country, "org": org, "register": time.time()}
+        dic_ip_history[ip_address] = {"name": country, "org": org, "register": t.time()}
       dic_whois[ip_address] = {"country": country, "org": org}
   else:
     for ip_address, v in df_ip_and_frequency.iterrows():
@@ -305,10 +347,10 @@ def do_whois(df_ip_and_frequency, dic_ip_history, df_ccode, list_alert_ip, list_
   df_ip_country_frequency = pd.DataFrame.from_dict(dic_whois, orient="index")
   df_ip_country_frequency['count'] = df_ip_and_frequency['count']
   df_ip_country_frequency.columns.name = "IP Address"
-  return df_ip_country_frequency, dic_ip_history, df_alert_ip_and_frequency
+  return df_ip_country_frequency, dic_ip_history
 
 
-def check_alerting_ip(ip_address, list_alert, list_ignore):
+def check_ip(ip_address, list_alert, list_ignore):
   ip_instance = ip_network(ip_address)
   for igip in list_ignore:
     if ip_instance.subnet_of(igip):
@@ -338,6 +380,20 @@ def aa_analysis(df_ip_count, df_log_aa):
   for k, v in dic_aa_whole.items():
     dic_aa_whole[k] = sorted(v.items(), key=lambda x: x[1], reverse=True)
   return dic_aa_by_ip, dic_aa_whole
+
+
+def aa_analysis_weekday(df_ip_count, df_log_aa):
+  # dic_aa_weekday = {}
+  list_aa_week = []
+  for i in range(7):
+    df_la_week = df_log_aa[df_log_aa.weekday == i]
+    # dic_wd = {}
+    # dic_wd['total'] = len(df_la_week)
+    # dic_wd['ip_address'] = df_la_week.groupby('ip').size().to_dict()
+    # dic_aa_weekday[weekday2str(i)] = dic_wd
+    list_aa_week.append((weekday2str(i), len(df_la_week)))
+  # print('weekday:', dic_aa_weekday)
+  return list_aa_week
 
 
 def convert_country_name(df_ip_country_frequency, df_ccode, optionDict):
@@ -374,7 +430,26 @@ def list_by_ip(df_ip_country_frequency):
   return country_frequency_list
 
 
-def show_graph(country_frequency_list, df_ccode, optionDict, export_name):
+def export_weekday_graph(list, export_graph, export_csv):
+  x = []
+  y = []
+  label = []
+  for tup in list:
+    x.append(len(x) + 1)
+    y.append(tup[1])
+    label.append(tup[0] + '\n(' + str(tup[1]) + ')')
+  plt.title('ssh-attacks analysis grouped by weekday')
+  plt.bar(x, y, color='#9ffea0', linewidth=5, width=0.7, tick_label=label)
+  plt.gca().spines['right'].set_visible(False)
+  plt.gca().spines['top'].set_visible(False)
+  plt.savefig(export_graph)
+  with open(export_csv, 'w', encoding='UTF-8') as f:
+    for tup in list:
+      # (weekday,attempts)
+      f.write(",".join([tup[0], str(tup[1])]) + "\n")
+
+
+def show_graph(country_frequency_list, optionDict, export_name):
   count = 0
   top_country = []
   top_attack = []
@@ -486,6 +561,13 @@ def convertip(value):
     return ip_network(value)
   else:
     raise ValueError('Unsupported IP address Type')
+
+
+_list_weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+
+def weekday2str(weekday_value):
+  return _list_weekday[weekday_value]
 
 
 if __name__ == '__main__':

@@ -12,3 +12,9 @@ alert_attack_analysis_stat_by_ip.csv
 alert_ip_result.csv
 attack_analysis_stat.csv
 attack_analysis_stat_by_ip.csv
+alert_result.csv
+attack_analysis_stat.csv.old
+sshanalysis_week_result.png
+sshanalysis_week_result.csv
+alert_sshanalysis_week_result.png
+alert_sshanalysis_week_result.csv

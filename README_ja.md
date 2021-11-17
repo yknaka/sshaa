@@ -91,6 +91,8 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
 
 分析結果は、'export_aa_stat_name'や'export_aa_stat_by_ip_name'で指定するファイルに出力される。
 
+さらに、曜日分析がグラフとCSVファイルで出力される。ファイル名は'export_weekday_graph' および 'export_weekday_list'で指定できる。
+
 'alert_ip'リストにマッチするIPが存在した場合、'export_alert_aa_stat_name'や'export_alert_aa_stat_by_ip_name'も出力される。
 
 ### export_all_ip:
@@ -115,6 +117,8 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
   192.168.1.0/255.255.255.0
 ```
 
+さらに、曜日分析がグラフとCSVファイルで出力される。'export_alert_weekday_graph' と 'export_alert_weekday_list'で指定できる。
+
 ### alert_ip_ignore
 'alert_ip'に登録したリストの除外条件を指定する。
 
@@ -129,6 +133,10 @@ WHOIS APIで判明した国名を保存し、次回以降キャッシュを利�
   self
   localhost
 ```
+### dont_show_alert_ip
+‘alert_ip’で指定したパターンにマッチするIPアドレスを通常のリザルトから除外するフラグ。
+
+フラグが存在しない場合は分析結果のグラフやCSVファイルと’alert’機能により出力されるCSVファイルで重複するIPが発生する可能性がある。
 
 ### dont_show_graph
 グラフを画面表示しないフラグ。グラフのファイル出力はフラグによらず行われる。
@@ -181,6 +189,18 @@ IPアドレスを\*\*\*.\*\*\*.\*\*\*.\*\*\*で表示する。
 'alert_ip'に登録された範囲に存在するIPアドレスとアクセス試行回数について、オプション'aa'により実施された攻撃内容分析の出力先を指定する。出力項目は'export_aa_stat_by_ip_name'と同じ。
 
 登録リスト範囲内のIPが存在しない、もしくはオプション'aa'が指定されなかった場合はファイルは出力されない。デフォルト名は'alert_attack_analysis_stat_by_ip.csv'。
+
+### export_weekday_graph
+不正アクセス数を曜日分類した結果グラフの出力先ファイル名。デフォルトファイル名は'sshanalysis_week_result.png'
+
+### export_weekday_list
+不正アクセス数を曜日分類した結果のCSVファイル名。デフォルトファイル名は'sshanalysis_week_result.csv'
+
+### export_alert_weekday_graph
+'alert_ip'のルールで指定されたIPによる不正アクセス数を曜日分類した結果グラフの出力先ファイル名。デフォルトファイル名は'alert_sshanalysis_week_result.png'
+
+### export_alert_weekday_list
+'alert_ip'のルールで指定されたIPによる不正アクセス数を曜日分類した結果のCSVファイルの出力先ファイル名。デフォルトファイル名は'alert_sshanalysis_week_result.csv'
 
 # Example
 ``` console

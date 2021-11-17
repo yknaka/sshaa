@@ -2,3 +2,4 @@ pandas
 consoleoptions >= 1.1.0
 circlify
 matplotlib
+python-dateutil

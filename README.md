@@ -11,6 +11,9 @@ Top 5 Countries of IPs Where SSH Login Attempts Failed
 Top 10 IPs Where SSH Login Attempts Failed
 ![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_ip.png)
 
+What Days of the Week Have the Most Login Attempts?
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_day_of_the_week.png)
+
 ## CSV report
 ```
 IP Address,country,count
@@ -110,6 +113,8 @@ If this option is active, the log will be analyzed for the login name, port numb
 
 The analysis results will be output to the file specified by 'export_aa_stat_name' or 'export_aa_stat_by_ip_name'.
 
+And the day-of-week analysis is output as a graph and CSV file. Names of these files are change by 'export_weekday_graph' and 'export_weekday_list'.
+
 If the IP matches the condition specified in 'alert_ip', 'export_alert_aa_stat_name' and 'export_alert_aa_stat_by_ip_name' will also be active.
 
 ### export_all_ip:
@@ -137,6 +142,7 @@ For Example:
   192.168.0.0/24
   192.168.1.0/255.255.255.0
 ```
+And the day-of-week analysis is output as a graph and CSV file. Names of these files are change by 'export_alert_weekday_graph' and 'export_alert_weekday_list'.
 
 ### alert_ip_ignore
 Specify the exclusion condition for the list registered in 'alert_ip'.
@@ -158,6 +164,11 @@ For Example:
   self
   localhost
 ```
+
+### dont_duplicate_alert
+Flag to exclude IP addresses that match the pattern specified by 'alert_ip' from the normal results.
+
+If the flag does not exist, IP address duplication may occur in the analysis result graph or CSV file and the CSV file output by the 'alert' function.
 
 ### dont_show_graph
 Flag for not displaying the result graph on the screen.
@@ -239,6 +250,26 @@ The output items are the same as 'export_aa_stat_by_ip_name'.
 If there are no matching IPs in the list, or if the option 'aa' is not active, the file will not be output.
 
 The default name is "alert_attack_analysis_stat_by_ip.csv".
+
+### export_weekday_graph
+The output graph of the number of attack attempts analysis result grouped by day of the week.
+
+The default name is 'sshanalysis_week_result.png'.
+
+### export_weekday_list
+The output CSV file of the number of ttack attempts analysis result grouped by day of the week.
+
+The default name is 'sshanalysis_week_result.csv'.
+
+### export_alert_weekday_graph
+The name of the file to output the result graph of the number of attack attempts by IPs specified by the rule of 'alert_ip', classified by the day of the week.
+
+The default name is 'alert_sshanalysis_week_result.png'.
+
+### export_alert_weekday_list
+The name of the file to output the result CSV file of the number of attack attempts by IPs specified by the rule of 'alert_ip', classified by the day of the week.
+
+The default name is 'alert_sshanalysis_week_result.csv'.
 
 # Example
 ``` console
