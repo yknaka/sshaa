@@ -1,7 +1,8 @@
 {
-  "log": "auth.log",
+  "log": "/var/log/auth.log",
   "show_top": 10,
-  "dont_show_graph": true,
+  "ignore_less": 100,
   "aa": true,
-  "export_all_ip": true
+  "export_all_ip": true,
+  "dont_duplicate_alert": true
 }
