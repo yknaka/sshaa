@@ -19,3 +19,7 @@ sshanalysis_week_result.csv
 alert_sshanalysis_week_result.png
 alert_sshanalysis_week_result.csv
 options_test.json
+gpu1_auth.log
+gpu2_auth.log
+gpu3_auth.log
+gpu4_auth.log
