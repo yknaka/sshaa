@@ -14,6 +14,9 @@ Top 10 IPs Where SSH Login Attempts Failed
 What Days of the Week Have the Most Login Attempts?
 ![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_day_of_the_week.png)
 
+What Time of Day Have the Most Login Attempts?
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_time_of_day.png)
+
 ## CSV report
 ```
 IP Address,country,count

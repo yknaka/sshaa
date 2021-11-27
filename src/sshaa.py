@@ -40,6 +40,10 @@ def main(args=sys.argv):
                  "week_graph_csv": "sshanalysis_week_result.csv",
                  "week_alert_graph": "alert_sshanalysis_week_result.png",
                  "week_alert_graph_csv": "alert_sshanalysis_week_result.csv",
+                 "time_graph": "sshanalysis_time_result.png",
+                 "time_graph_csv": "sshanalysis_time_result.csv",
+                 "time_alert_graph": "alert_sshanalysis_time_result.png",
+                 "time_alert_graph_csv": "alert_sshanalysis_time_result.csv",
                  "graph_csv": "sshanalysis_result.csv",
                  "count_csv": "sshanalysis_ip_countlist.csv"}
   # map option value from sys.argv
@@ -67,6 +71,10 @@ def main(args=sys.argv):
   set_export("export_weekday_csv", "week_graph_csv", optionDict, export_name)
   set_export("export_alert_weekday_graph", "alert_week_graph", optionDict, export_name)
   set_export("export_alert_weekday_csv", "alert_week_graph_csv", optionDict, export_name)
+  set_export("export_time_graph", "time_graph", optionDict, export_name)
+  set_export("export_time_csv", "time_graph_csv", optionDict, export_name)
+  set_export("export_alert_time_graph", "alert_time_graph", optionDict, export_name)
+  set_export("export_alert_time_csv", "alert_time_graph_csv", optionDict, export_name)
   set_export("export_iplist_name", "count_csv", optionDict, export_name)
   # old version compatibility
   if "addr" in optionDict:
@@ -130,13 +138,15 @@ def main(args=sys.argv):
     print("*** ", "\033[05;31m", "Malcious Access was Detected From Alerting IP List!!", "\033[0m", " ***")
     if 'aa' in optionDict:
       dic_al_aa_by_ip, dic_al_aa_whole = aa_analysis(df_alert_iphifreq, df_alert_log_aa)
-      dic_al_aa_week = aa_analysis_weekday(df_alert_iphifreq, df_alert_log_aa)
+      dic_al_aa_week = aa_analysis_weekday(df_alert_log_aa)
+      dic_al_aa_time = aa_analysis_hour(df_alert_log_aa)
     print(df_alert_iphifreq.head(optionDict["show_top"]))
     print('...alert list exported')
   if bool_aa:
     print("analyzing attacks detail")
     dic_aa_by_ip, dic_aa_whole = aa_analysis(df_ipfreq, df_log_aa)
-    dic_aa_week = aa_analysis_weekday(df_iphifreq, df_log_aa)
+    dic_aa_week = aa_analysis_weekday(df_log_aa)
+    dic_aa_time = aa_analysis_hour(df_log_aa)
   print("***result***")
   print(df_ct_ip_freq.head(optionDict["show_top"]))
   print("************")
@@ -150,12 +160,14 @@ def main(args=sys.argv):
     if bool_aa:
       export_aa_dic2csv(dic_al_aa_by_ip, export_name["alert_aa_stat_ip"])
       export_aa_dic2csv(dic_al_aa_whole, export_name["alert_aa_stat"])
-      export_weekday_graph(dic_al_aa_week, export_name["week_alert_graph"], export_name["week_alert_graph_csv"])
+      export_histo_graph('ssh-attacks analysis grouped by weekday in alert', dic_al_aa_week, export_name["week_alert_graph"], export_name["week_alert_graph_csv"])
+      export_histo_graph('ssh-attacks analysis grouped by hour_of_day in alert', dic_al_aa_time, export_name["time_alert_graph"], export_name["time_alert_graph_csv"])
     df_alert_iphifreq.to_csv(export_name["alert_ip_csv"], index_label=df_alert_iphifreq.columns.name)
   if bool_aa:
     export_aa_dic2csv(dic_aa_by_ip, export_name["aa_stat_ip"])
     export_aa_dic2csv(dic_aa_whole, export_name["aa_stat"])
-    export_weekday_graph(dic_aa_week, export_name["week_graph"], export_name["week_graph_csv"])
+    export_histo_graph('ssh-attacks analysis grouped by weekday', dic_aa_week, export_name["week_graph"], export_name["week_graph_csv"])
+    export_histo_graph('ssh-attacks analysis grouped by hour_of_day', dic_aa_time, export_name["time_graph"], export_name["time_graph_csv"])
   if "export_all_ip" in optionDict:
     df_ipfreq.sort_values(by="count", ascending=False).to_csv(export_name["count_csv"], index_label=df_ipfreq.columns.name)
   df_ct_ip_freq.sort_values(by="count", ascending=False).to_csv(export_name["graph_csv"], index_label=df_ct_ip_freq.columns.name)
@@ -240,8 +252,8 @@ def create_ip_count_df(df_log, lastmodified):
     if idx2 == -1:
       idx2 = len(s)
     port = s[idx + len(stw):idx2]
-    ip_arr.append([ip, user, port, failPasswd, time, time.weekday()])
-  df_log_aa = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk', 'time', 'weekday'])
+    ip_arr.append([ip, user, port, failPasswd, time, time.weekday(), time.hour])
+  df_log_aa = pd.DataFrame(ip_arr, columns=['ip', 'user', 'port', 'pwd_atk', 'time', 'weekday', 'time_hour'])
   df_log_aa.columns.name = "IP Address"
   # date noncorrespondance check
   dif_date = df_log_aa.time.iloc[-1] - df_log_aa.time.iloc[0]
@@ -382,18 +394,20 @@ def aa_analysis(df_ip_count, df_log_aa):
   return dic_aa_by_ip, dic_aa_whole
 
 
-def aa_analysis_weekday(df_ip_count, df_log_aa):
-  # dic_aa_weekday = {}
+def aa_analysis_weekday(df_log_aa):
   list_aa_week = []
   for i in range(7):
     df_la_week = df_log_aa[df_log_aa.weekday == i]
-    # dic_wd = {}
-    # dic_wd['total'] = len(df_la_week)
-    # dic_wd['ip_address'] = df_la_week.groupby('ip').size().to_dict()
-    # dic_aa_weekday[weekday2str(i)] = dic_wd
     list_aa_week.append((weekday2str(i), len(df_la_week)))
-  # print('weekday:', dic_aa_weekday)
   return list_aa_week
+
+
+def aa_analysis_hour(df_log_aa):
+  list_aa_hour = []
+  for i in range(24):
+    df_la_hour = df_log_aa[df_log_aa.time_hour == i]
+    list_aa_hour.append((str(i) + ':00', len(df_la_hour)))
+  return list_aa_hour
 
 
 def convert_country_name(df_ip_country_frequency, df_ccode, optionDict):
@@ -430,7 +444,7 @@ def list_by_ip(df_ip_country_frequency):
   return country_frequency_list
 
 
-def export_weekday_graph(list, export_graph, export_csv):
+def export_histo_graph(title, list, export_graph, export_csv):
   x = []
   y = []
   label = []
@@ -438,7 +452,8 @@ def export_weekday_graph(list, export_graph, export_csv):
     x.append(len(x) + 1)
     y.append(tup[1])
     label.append(tup[0] + '\n(' + str(tup[1]) + ')')
-  plt.title('ssh-attacks analysis grouped by weekday')
+  fig, ax = plt.subplots(figsize=(int(1.3 * len(list)), 8))
+  ax.set_title(title)
   plt.bar(x, y, color='#9ffea0', linewidth=5, width=0.7, tick_label=label)
   plt.gca().spines['right'].set_visible(False)
   plt.gca().spines['top'].set_visible(False)

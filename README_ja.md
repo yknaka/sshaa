@@ -11,6 +11,13 @@ Top 5 Countries of IPs Where SSH Login Attempts Failed
 Top 10 IPs Where SSH Login Attempts Failed
 ![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_ip.png)
 
+What Days of the Week Have the Most Login Attempts?
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_day_of_the_week.png)
+
+What Time of Day Have the Most Login Attempts?
+![Figure](https://github.com/yknaka/sshaa/blob/main/sample_result_group_by_time_of_day.png)
+
+
 ## CSV
 ```
 ,country,count
