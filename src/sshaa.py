@@ -468,7 +468,7 @@ def show_graph(country_frequency_list, optionDict, export_name):
   )
 
   fig, ax = plt.subplots(figsize=(10, 10))
-  title = 'ssh-attacks from malicious IPs'
+  title = 'ssh-attacks from malicious IPs' if 'group_by_ip' in optionDict else 'ssh-attacks group by countries'
   ax.set_title(title)
   ax.axis('off')
 
