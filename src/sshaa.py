@@ -98,6 +98,7 @@ def main(args=sys.argv):
   bool_aa = 'aa' in optionDict
   print('analyze log (detailed analysis)' if bool_aa else 'analyzing log')
   df_log = df[df[0].str.contains("Failed|Invalid user")]
+  print('(all events, login failure events)=({0:2d},{1:2d}) {2:.1f} persents invalid access.'.format(len(df), len(df_log), float(len(df)) / float(len(df_log))))
   # Extract unauthorized access->count same IPs
   if bool_aa:
     df_ipfreq, df_log_aa = create_ip_count_df(df_log, lastmodified)
@@ -245,6 +246,9 @@ def create_ip_count_df(df_log, lastmodified):
     edw = ' port '
     idx2 = s.find(edw, idx + len(stw))
     ip = s[idx + len(stw):idx2]
+    if ip.startswith('from'):
+      user = 'from'
+      ip = ip[ip.find(' '):].strip()
     idx = idx2
     stw = edw
     edw = ' '
