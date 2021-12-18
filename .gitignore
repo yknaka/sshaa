@@ -23,3 +23,5 @@ gpu1_auth.log
 gpu2_auth.log
 gpu3_auth.log
 gpu4_auth.log
+sshanalysis_time_result.csv
+sshanalysis_time_result.png
